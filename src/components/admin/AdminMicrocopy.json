@@ -1,0 +1,265 @@
+{
+  "dashboard_titles": {
+    "main_dashboard": "Policy Analytics Dashboard",
+    "job_seekers_view": "Employment Services Analytics",
+    "entrepreneurs_view": "Entrepreneurship Program Analytics",
+    "overview_tab": "Program Overview",
+    "demographics_tab": "Participant Demographics",
+    "outcomes_tab": "Program Outcomes",
+    "interventions_tab": "Intervention Analysis"
+  },
+  
+  "kpi_tiles": {
+    "job_seekers": {
+      "placement_rate": {
+        "title": "Job Placement Rate",
+        "tooltip": "Percentage of job seekers who secured employment within 6 months of program completion",
+        "description": "Measures program effectiveness in connecting participants with employment opportunities"
+      },
+      "time_to_placement": {
+        "title": "Average Time to Placement",
+        "tooltip": "Average number of days from program enrollment to job placement",
+        "description": "Indicates program efficiency in preparing participants for employment"
+      },
+      "retention_rate": {
+        "title": "6-Month Job Retention",
+        "tooltip": "Percentage of placed participants still employed after 6 months",
+        "description": "Measures quality and sustainability of job placements"
+      },
+      "skills_improvement": {
+        "title": "Skills Gap Closure",
+        "tooltip": "Average improvement in skills assessment scores from program start to completion",
+        "description": "Demonstrates program impact on participant skill development"
+      },
+      "program_completion": {
+        "title": "Program Completion Rate",
+        "tooltip": "Percentage of enrolled participants who complete all required program modules",
+        "description": "Indicates program engagement and participant commitment"
+      },
+      "salary_improvement": {
+        "title": "Average Salary Increase",
+        "tooltip": "Average increase in salary compared to pre-program employment",
+        "description": "Measures economic impact of program participation"
+      }
+    },
+    
+    "entrepreneurs": {
+      "learning_completion": {
+        "title": "Learning Module Completion",
+        "tooltip": "Percentage of entrepreneurs completing all required learning modules",
+        "description": "Measures engagement with entrepreneurship curriculum"
+      },
+      "networking_engagement": {
+        "title": "Networking Participation",
+        "tooltip": "Percentage of entrepreneurs actively participating in networking events",
+        "description": "Indicates utilization of networking and mentorship opportunities"
+      },
+      "businesses_registered": {
+        "title": "New Businesses Registered",
+        "tooltip": "Number of formal businesses registered by program participants",
+        "description": "Direct measure of entrepreneurship program success"
+      },
+      "jobs_created": {
+        "title": "Jobs Created",
+        "tooltip": "Total employment opportunities created by participant businesses",
+        "description": "Economic multiplier effect of entrepreneurship programs"
+      },
+      "funding_accessed": {
+        "title": "Total Funding Secured",
+        "tooltip": "Cumulative funding secured by program participants (in millions)",
+        "description": "Measures program success in connecting entrepreneurs with capital"
+      },
+      "program_roi": {
+        "title": "Program Return on Investment",
+        "tooltip": "Economic value generated per dollar of program investment",
+        "description": "Overall program efficiency and economic impact"
+      },
+      "business_survival": {
+        "title": "12-Month Business Survival",
+        "tooltip": "Percentage of businesses still operating after 12 months",
+        "description": "Measures sustainability of businesses created through the program"
+      }
+    },
+    
+    "shared": {
+      "total_enrollment": {
+        "title": "Total Program Enrollment",
+        "tooltip": "Combined enrollment across all program tracks",
+        "description": "Overall program reach and participation"
+      },
+      "demographic_diversity": {
+        "title": "Demographic Diversity Index",
+        "tooltip": "Measure of demographic representation across gender, age, and education",
+        "description": "Program inclusivity and equitable access"
+      },
+      "regional_coverage": {
+        "title": "Regional Coverage Rate",
+        "tooltip": "Percentage of regions with active program participants",
+        "description": "Geographic reach and accessibility of programs"
+      }
+    }
+  },
+  
+  "filter_labels": {
+    "date_range": "Time Period",
+    "region": "Geographic Region",
+    "track_focus": "Program Track",
+    "demographic_filters": "Participant Demographics",
+    "gender": "Gender",
+    "age_group": "Age Group",
+    "education_level": "Education Level",
+    "employment_status": "Employment Status",
+    "apply_filters": "Apply Filters",
+    "clear_filters": "Clear All",
+    "expand_filters": "More Filters",
+    "collapse_filters": "Fewer Filters"
+  },
+  
+  "date_range_options": {
+    "last_30_days": "Last 30 Days",
+    "last_quarter": "Last Quarter",
+    "last_12_months": "Last 12 Months",
+    "year_to_date": "Year to Date",
+    "custom_range": "Custom Date Range",
+    "all_time": "All Time Data"
+  },
+  
+  "chart_titles": {
+    "regional_performance": "Performance by Region",
+    "monthly_trends": "Monthly Enrollment & Completion Trends",
+    "demographic_breakdown": "Participant Demographics",
+    "outcome_comparison": "Employment vs. Entrepreneurship Outcomes",
+    "intervention_effectiveness": "Intervention Impact Analysis",
+    "cohort_analysis": "Cohort Performance Over Time"
+  },
+  
+  "table_headers": {
+    "region": "Region",
+    "job_seekers": "Job Seekers",
+    "entrepreneurs": "Entrepreneurs", 
+    "placements": "Job Placements",
+    "businesses": "New Businesses",
+    "completion_rate": "Completion Rate",
+    "success_rate": "Success Rate",
+    "participants": "Participants",
+    "outcomes": "Outcomes",
+    "roi": "ROI"
+  },
+  
+  "action_buttons": {
+    "export_data": "Export Data",
+    "download_report": "Download Report",
+    "view_details": "View Details",
+    "compare_periods": "Compare Periods",
+    "share_dashboard": "Share Dashboard",
+    "schedule_report": "Schedule Report",
+    "print_view": "Print View",
+    "full_screen": "Full Screen",
+    "refresh_data": "Refresh Data"
+  },
+  
+  "status_messages": {
+    "loading": "Loading dashboard data...",
+    "no_data": "No data available for the selected period",
+    "error_loading": "Error loading data. Please try again.",
+    "data_updated": "Dashboard data updated successfully",
+    "export_complete": "Data export completed",
+    "export_failed": "Export failed. Please try again.",
+    "filters_applied": "Filters applied successfully",
+    "insufficient_data": "Insufficient data for analysis (minimum 5 participants required)"
+  },
+  
+  "tooltips": {
+    "privacy_note": "Individual data is aggregated and anonymized to protect participant privacy",
+    "data_freshness": "Data is updated daily at 6:00 AM",
+    "suppression_notice": "Values less than 5 are suppressed for privacy protection",
+    "calculation_method": "Click for detailed calculation methodology",
+    "benchmark_comparison": "Compared to national averages",
+    "trend_indicator": "Arrow indicates change from previous period"
+  },
+  
+  "onboarding": {
+    "welcome_title": "Welcome to the Policy Analytics Dashboard",
+    "welcome_message": "This dashboard provides comprehensive insights into job seeker and entrepreneur program outcomes. Use the tabs above to switch between different views.",
+    "tour_steps": [
+      {
+        "title": "Program Overview",
+        "content": "Start here to see high-level metrics across both employment and entrepreneurship programs."
+      },
+      {
+        "title": "Filter Controls", 
+        "content": "Use these filters to analyze specific time periods, regions, or demographic groups."
+      },
+      {
+        "title": "KPI Tiles",
+        "content": "These tiles show key performance indicators. Click on any tile for detailed analysis."
+      },
+      {
+        "title": "Data Visualization",
+        "content": "Charts and graphs provide visual insights into program performance and trends."
+      },
+      {
+        "title": "Export Options",
+        "content": "Download data and reports for further analysis or sharing with stakeholders."
+      }
+    ],
+    "skip_tour": "Skip Tour",
+    "next_step": "Next",
+    "previous_step": "Previous",
+    "finish_tour": "Finish Tour"
+  },
+  
+  "accessibility": {
+    "skip_to_content": "Skip to main content",
+    "skip_to_navigation": "Skip to navigation",
+    "chart_description": "Chart showing {title} with {dataPoints} data points",
+    "table_description": "Data table with {rows} rows and {columns} columns",
+    "filter_applied": "Filter applied: {filterName} set to {filterValue}",
+    "sort_applied": "Table sorted by {columnName} in {direction} order",
+    "page_navigation": "Page {current} of {total}",
+    "loading_announcement": "Loading new data, please wait",
+    "error_announcement": "Error occurred, please check your connection and try again"
+  },
+  
+  "export_options": {
+    "csv_export": "Export as CSV",
+    "excel_export": "Export as Excel",
+    "pdf_report": "Generate PDF Report",
+    "json_data": "Export JSON Data",
+    "image_export": "Export Chart as Image",
+    "scheduled_report": "Schedule Regular Report"
+  },
+  
+  "privacy_notices": {
+    "data_suppression": "Data with fewer than 5 participants is suppressed to protect privacy",
+    "aggregated_only": "Only aggregated, anonymized data is displayed",
+    "retention_policy": "Data is retained according to government data retention policies",
+    "access_logged": "All data access is logged for audit purposes"
+  },
+  
+  "help_text": {
+    "kpi_calculation": "Click the info icon next to any metric to see how it's calculated",
+    "filter_combinations": "Multiple filters can be combined for detailed analysis",
+    "data_refresh": "Data is automatically refreshed daily. Use the refresh button for the latest updates",
+    "export_limits": "Exports are limited to 10,000 records for performance reasons",
+    "comparison_mode": "Use comparison mode to analyze different time periods side by side"
+  },
+  
+  "error_messages": {
+    "network_error": "Unable to connect to the server. Please check your internet connection.",
+    "permission_denied": "You don't have permission to view this data. Contact your administrator.",
+    "data_not_found": "The requested data could not be found.",
+    "export_too_large": "The export is too large. Please apply filters to reduce the data size.",
+    "session_expired": "Your session has expired. Please log in again.",
+    "invalid_date_range": "Please select a valid date range.",
+    "filter_conflict": "The selected filters conflict with each other. Please adjust your selection."
+  },
+  
+  "success_messages": {
+    "data_loaded": "Dashboard data loaded successfully",
+    "export_started": "Export started. You'll receive a notification when it's complete.",
+    "report_scheduled": "Report has been scheduled successfully",
+    "filters_saved": "Filter preferences saved",
+    "dashboard_shared": "Dashboard link copied to clipboard"
+  }
+}

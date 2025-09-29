@@ -1,0 +1,25 @@
+# Sample Job Seekers Data (10 rows)
+user_id,email,full_name,gender,age_group,education_level,region_name,track_level,enrollment_date,status,previous_salary,target_industry,placement_date,current_salary,retention_6_months
+550e8400-e29b-41d4-a716-446655440001,john.smith@email.com,John Smith,Male,25-34,Bachelor's,Western Cape,mid,2024-01-15,completed,45000,Technology,2024-04-20,65000,TRUE
+550e8400-e29b-41d4-a716-446655440002,sarah.jones@email.com,Sarah Jones,Female,18-24,High School,Gauteng,early,2024-02-01,active,0,Retail,,,
+550e8400-e29b-41d4-a716-446655440003,michael.brown@email.com,Michael Brown,Male,35-44,Master's,KwaZulu-Natal,advanced,2024-01-10,completed,75000,Finance,2024-03-15,95000,TRUE
+550e8400-e29b-41d4-a716-446655440004,lisa.davis@email.com,Lisa Davis,Female,25-34,Some College,Eastern Cape,mid,2024-02-15,active,35000,Healthcare,,,
+550e8400-e29b-41d4-a716-446655440005,david.wilson@email.com,David Wilson,Male,45-54,Bachelor's,Western Cape,mid,2024-01-20,completed,55000,Manufacturing,2024-05-10,70000,TRUE
+550e8400-e29b-41d4-a716-446655440006,maria.garcia@email.com,Maria Garcia,Female,18-24,High School,Gauteng,early,2024-03-01,dropped,0,Hospitality,,,
+550e8400-e29b-41d4-a716-446655440007,james.taylor@email.com,James Taylor,Male,35-44,PhD,KwaZulu-Natal,advanced,2024-01-05,completed,85000,Education,2024-04-01,105000,TRUE
+550e8400-e29b-41d4-a716-446655440008,anna.martinez@email.com,Anna Martinez,Female,25-34,Bachelor's,Eastern Cape,mid,2024-02-20,active,42000,Marketing,,,
+550e8400-e29b-41d4-a716-446655440009,robert.lee@email.com,Robert Lee,Male,55+,Some College,Western Cape,mid,2024-01-25,completed,48000,Construction,2024-04-25,62000,FALSE
+550e8400-e29b-41d4-a716-446655440010,jennifer.white@email.com,Jennifer White,Female,25-34,Master's,Gauteng,advanced,2024-02-10,active,68000,Consulting,,,
+
+# Sample Entrepreneurs Data (10 rows)
+user_id,email,full_name,gender,age_group,education_level,region_name,enrollment_date,status,business_category,business_idea,registration_date,business_status,employee_count,annual_revenue,funding_received
+650e8400-e29b-41d4-a716-446655440001,alex.entrepreneur@email.com,Alex Entrepreneur,Male,25-34,Bachelor's,Western Cape,2024-01-15,completed,Technology,Mobile app for local services,2024-05-01,active,3,250000,50000
+650e8400-e29b-41d4-a716-446655440002,priya.startup@email.com,Priya Startup,Female,18-24,Some College,Gauteng,2024-02-01,active,Retail,Online fashion boutique,,,0,0
+650e8400-e29b-41d4-a716-446655440003,carlos.business@email.com,Carlos Business,Male,35-44,Master's,KwaZulu-Natal,2024-01-10,completed,Agriculture,Organic farming cooperative,2024-04-15,active,8,450000,100000
+650e8400-e29b-41d4-a716-446655440004,fatima.venture@email.com,Fatima Venture,Female,25-34,Bachelor's,Eastern Cape,2024-02-15,active,Healthcare,Community health clinic,,,0,25000
+650e8400-e29b-41d4-a716-446655440005,tom.innovate@email.com,Tom Innovate,Male,45-54,PhD,Western Cape,2024-01-20,completed,Technology,EdTech platform for schools,2024-06-01,active,5,180000,75000
+650e8400-e29b-41d4-a716-446655440006,nina.creative@email.com,Nina Creative,Female,18-24,High School,Gauteng,2024-03-01,dropped,Other,Handmade crafts business,,,0,0
+650e8400-e29b-41d4-a716-446655440007,ahmed.social@email.com,Ahmed Social,Male,35-44,Master's,KwaZulu-Natal,2024-01-05,completed,Other,Social impact consulting,2024-05-20,active,2,120000,30000
+650e8400-e29b-41d4-a716-446655440008,sophie.green@email.com,Sophie Green,Female,25-34,Bachelor's,Eastern Cape,2024-02-20,active,Agriculture,Sustainable farming solutions,,,0,15000
+650e8400-e29b-41d4-a716-446655440009,raj.tech@email.com,Raj Tech,Male,55+,Some College,Western Cape,2024-01-25,completed,Technology,IT support for small businesses,2024-04-30,active,1,95000,20000
+650e8400-e29b-41d4-a716-446655440010,elena.food@email.com,Elena Food,Female,25-34,Bachelor's,Gauteng,2024-02-10,active,Other,Catering and events business,,,0,10000

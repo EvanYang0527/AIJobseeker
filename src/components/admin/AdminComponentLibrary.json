@@ -1,0 +1,324 @@
+{
+  "components": [
+    {
+      "name": "KPITile",
+      "purpose": "Display key performance indicators with trend information",
+      "props": {
+        "title": "string - KPI display name",
+        "value": "string | number - Current KPI value",
+        "change": "number - Percentage change from previous period",
+        "changeType": "'increase' | 'decrease' | 'neutral' - Direction of change",
+        "icon": "React.ComponentType - Lucide icon component",
+        "color": "string - Tailwind background color class",
+        "tooltip": "string - Additional context information",
+        "onClick": "() => void - Optional click handler for drill-down"
+      },
+      "accessibility": {
+        "role": "button | generic",
+        "ariaLabel": "Descriptive label including value and trend",
+        "tabIndex": "0 if clickable, -1 otherwise",
+        "keyboardNav": "Enter/Space for activation if clickable"
+      },
+      "behavior": {
+        "hoverEffects": "Shadow elevation and scale transform",
+        "loadingState": "Skeleton placeholder with shimmer effect",
+        "errorState": "Red border with error icon and message"
+      }
+    },
+    {
+      "name": "FilterPanel",
+      "purpose": "Comprehensive filtering interface for dashboard data",
+      "props": {
+        "onFilterChange": "(filters: FilterState) => void - Callback when filters change",
+        "activeFilters": "FilterState - Current filter selections",
+        "availableFilters": "FilterConfig[] - Configuration for available filters",
+        "isExpanded": "boolean - Whether advanced filters are shown",
+        "resetFilters": "() => void - Function to clear all filters"
+      },
+      "accessibility": {
+        "role": "region",
+        "ariaLabel": "Data filtering controls",
+        "fieldsets": "Grouped related filters with legends",
+        "announcements": "Screen reader announcements for filter changes"
+      },
+      "behavior": {
+        "collapsible": "Advanced filters can be hidden/shown",
+        "validation": "Real-time validation of filter combinations",
+        "persistence": "Filter state persisted in URL parameters"
+      }
+    },
+    {
+      "name": "DataTable",
+      "purpose": "Sortable, paginated table with export capabilities",
+      "props": {
+        "columns": "TableColumn[] - Column definitions with formatting",
+        "data": "any[] - Table data array",
+        "sortable": "boolean - Enable column sorting",
+        "exportable": "boolean - Show export button",
+        "pagination": "boolean - Enable pagination controls",
+        "pageSize": "number - Rows per page",
+        "loading": "boolean - Show loading state",
+        "emptyMessage": "string - Message when no data"
+      },
+      "accessibility": {
+        "role": "table",
+        "columnHeaders": "Proper th elements with scope attributes",
+        "sortControls": "Aria-sort attributes and keyboard navigation",
+        "pagination": "Aria-label for page navigation controls"
+      },
+      "behavior": {
+        "sorting": "Click headers to sort, visual indicators for sort direction",
+        "selection": "Row selection with checkbox column",
+        "export": "CSV/Excel export with progress indicator"
+      }
+    },
+    {
+      "name": "ChartContainer",
+      "purpose": "Wrapper for charts with controls and export options",
+      "props": {
+        "title": "string - Chart title",
+        "children": "React.ReactNode - Chart component",
+        "exportable": "boolean - Show export button",
+        "fullscreen": "boolean - Show fullscreen toggle",
+        "tooltip": "string - Chart description for accessibility",
+        "loading": "boolean - Show loading skeleton",
+        "error": "string - Error message if chart fails to load"
+      },
+      "accessibility": {
+        "role": "img",
+        "ariaLabel": "Descriptive chart title and data summary",
+        "altText": "Text alternative describing chart data and trends",
+        "keyboardNav": "Tab navigation through chart elements"
+      },
+      "behavior": {
+        "responsive": "Automatically adjusts to container size",
+        "interactions": "Hover tooltips and click drill-downs",
+        "export": "PNG/SVG export with proper dimensions"
+      }
+    },
+    {
+      "name": "RegionMap",
+      "purpose": "Interactive map showing regional performance data",
+      "props": {
+        "data": "RegionData[] - Performance data by region",
+        "metric": "string - Which metric to visualize",
+        "colorScale": "ColorScale - Color mapping for data values",
+        "onRegionClick": "(regionId: string) => void - Region selection handler",
+        "selectedRegion": "string - Currently selected region ID",
+        "showLegend": "boolean - Display color scale legend"
+      },
+      "accessibility": {
+        "role": "img",
+        "ariaLabel": "Interactive map of regional performance",
+        "keyboardNav": "Arrow keys to navigate regions",
+        "altText": "Detailed description of regional data patterns"
+      },
+      "behavior": {
+        "hover": "Show region name and metric value on hover",
+        "selection": "Click to select region and update other components",
+        "zoom": "Mouse wheel zoom with pan controls"
+      }
+    },
+    {
+      "name": "CohortSelector",
+      "purpose": "Time-based cohort selection with preset ranges",
+      "props": {
+        "selectedRange": "DateRange - Currently selected date range",
+        "onRangeChange": "(range: DateRange) => void - Range change handler",
+        "presets": "DateRangePreset[] - Quick selection options",
+        "maxDate": "Date - Latest selectable date",
+        "minDate": "Date - Earliest selectable date",
+        "allowCustom": "boolean - Enable custom date picker"
+      },
+      "accessibility": {
+        "role": "group",
+        "ariaLabel": "Date range selection controls",
+        "dateInputs": "Proper date input labels and formats",
+        "announcements": "Screen reader feedback for range changes"
+      },
+      "behavior": {
+        "presets": "Quick buttons for common ranges (Last 30 days, YTD, etc.)",
+        "validation": "Ensure start date is before end date",
+        "formatting": "Localized date display based on user preferences"
+      }
+    },
+    {
+      "name": "InterventionTracker",
+      "purpose": "Timeline view of program interventions and outcomes",
+      "props": {
+        "interventions": "Intervention[] - List of interventions to display",
+        "timeRange": "DateRange - Visible time range",
+        "onInterventionClick": "(id: string) => void - Intervention detail handler",
+        "groupBy": "'type' | 'region' | 'track' - Grouping strategy",
+        "showOutcomes": "boolean - Display outcome indicators"
+      },
+      "accessibility": {
+        "role": "list",
+        "ariaLabel": "Timeline of program interventions",
+        "listItems": "Each intervention as a list item with proper labeling",
+        "keyboardNav": "Arrow keys to navigate timeline"
+      },
+      "behavior": {
+        "timeline": "Horizontal timeline with intervention markers",
+        "grouping": "Visual grouping by selected criteria",
+        "details": "Expandable details panel for each intervention"
+      }
+    },
+    {
+      "name": "DemographicSlicer",
+      "purpose": "Multi-dimensional demographic filtering interface",
+      "props": {
+        "dimensions": "DemographicDimension[] - Available demographic filters",
+        "selections": "DemographicSelections - Current selections",
+        "onSelectionChange": "(selections: DemographicSelections) => void",
+        "data": "DemographicData - Available values for each dimension",
+        "multiSelect": "boolean - Allow multiple selections per dimension"
+      },
+      "accessibility": {
+        "role": "group",
+        "ariaLabel": "Demographic filtering controls",
+        "fieldsets": "Grouped controls with descriptive legends",
+        "checkboxes": "Proper labeling for multi-select options"
+      },
+      "behavior": {
+        "cascading": "Dependent filters update based on selections",
+        "counts": "Show count of records for each filter option",
+        "reset": "Clear all selections button"
+      }
+    },
+    {
+      "name": "ProgressIndicator",
+      "purpose": "Visual progress tracking for user journeys",
+      "props": {
+        "steps": "ProgressStep[] - Journey steps with completion status",
+        "currentStep": "number - Currently active step index",
+        "orientation": "'horizontal' | 'vertical' - Layout direction",
+        "showLabels": "boolean - Display step labels",
+        "clickable": "boolean - Allow navigation by clicking steps"
+      },
+      "accessibility": {
+        "role": "progressbar",
+        "ariaValueNow": "Current step number",
+        "ariaValueMax": "Total number of steps",
+        "stepLabels": "Descriptive labels for each step"
+      },
+      "behavior": {
+        "animation": "Smooth transitions between steps",
+        "states": "Visual distinction for completed, current, and future steps",
+        "navigation": "Click to jump to completed steps if enabled"
+      }
+    },
+    {
+      "name": "ExportButton",
+      "purpose": "Data export functionality with format options",
+      "props": {
+        "data": "any[] - Data to export",
+        "filename": "string - Default filename",
+        "formats": "ExportFormat[] - Available export formats",
+        "onExport": "(format: string, data: any[]) => void - Export handler",
+        "loading": "boolean - Show loading state during export",
+        "disabled": "boolean - Disable export functionality"
+      },
+      "accessibility": {
+        "role": "button",
+        "ariaLabel": "Export data in selected format",
+        "dropdown": "Proper ARIA attributes for format selection",
+        "progress": "Progress announcements during export"
+      },
+      "behavior": {
+        "formats": "Support for CSV, Excel, PDF, and JSON exports",
+        "progress": "Progress indicator for large exports",
+        "success": "Success notification with download link"
+      }
+    }
+  ],
+  "designTokens": {
+    "colors": {
+      "primary": "#002244",
+      "secondary": "#009FDA", 
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "neutral": {
+        "50": "#F9FAFB",
+        "100": "#F3F4F6",
+        "200": "#E5E7EB",
+        "300": "#D1D5DB",
+        "400": "#9CA3AF",
+        "500": "#6B7280",
+        "600": "#4B5563",
+        "700": "#374151",
+        "800": "#1F2937",
+        "900": "#111827"
+      }
+    },
+    "spacing": {
+      "xs": "0.25rem",
+      "sm": "0.5rem", 
+      "md": "1rem",
+      "lg": "1.5rem",
+      "xl": "2rem",
+      "2xl": "3rem"
+    },
+    "typography": {
+      "fontFamily": "Inter, system-ui, sans-serif",
+      "fontSize": {
+        "xs": "0.75rem",
+        "sm": "0.875rem",
+        "base": "1rem",
+        "lg": "1.125rem",
+        "xl": "1.25rem",
+        "2xl": "1.5rem",
+        "3xl": "1.875rem"
+      },
+      "fontWeight": {
+        "normal": "400",
+        "medium": "500",
+        "semibold": "600",
+        "bold": "700"
+      }
+    },
+    "borderRadius": {
+      "sm": "0.25rem",
+      "md": "0.375rem",
+      "lg": "0.5rem",
+      "xl": "0.75rem",
+      "2xl": "1rem"
+    },
+    "shadows": {
+      "sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+      "md": "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+      "lg": "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+      "xl": "0 20px 25px -5px rgb(0 0 0 / 0.1)"
+    }
+  },
+  "patterns": {
+    "cardLayout": {
+      "padding": "1.5rem",
+      "borderRadius": "0.75rem",
+      "backgroundColor": "white",
+      "border": "1px solid #E5E7EB",
+      "boxShadow": "0 1px 3px 0 rgb(0 0 0 / 0.1)"
+    },
+    "buttonPrimary": {
+      "padding": "0.75rem 1.5rem",
+      "backgroundColor": "#002244",
+      "color": "white",
+      "borderRadius": "0.5rem",
+      "fontWeight": "600",
+      "hover": {
+        "backgroundColor": "#001122"
+      }
+    },
+    "inputField": {
+      "padding": "0.75rem 1rem",
+      "border": "1px solid #D1D5DB",
+      "borderRadius": "0.5rem",
+      "fontSize": "0.875rem",
+      "focus": {
+        "borderColor": "#009FDA",
+        "boxShadow": "0 0 0 3px rgb(0 157 218 / 0.1)"
+      }
+    }
+  }
+}
