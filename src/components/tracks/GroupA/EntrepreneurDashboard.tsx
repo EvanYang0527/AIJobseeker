@@ -92,6 +92,9 @@ const buildWoopIntakePrompt = (user: User | null) => {
     getRecordFromProfile('assessmentQuestionnaire') ||
     getRecordFromProfile('assessmentAnswers');
 
+  const goalSettingData = getRecordFromProfile('goalSettingData');
+  const wageQuestionnaire = getRecordFromProfile('wageEmploymentQuestionnaire');
+
   const goalSettingLinesSections: string[] = [
     'USER OVERVIEW',
     `Full name: ${formatPromptValue(user?.fullName)}`,
@@ -107,6 +110,8 @@ const buildWoopIntakePrompt = (user: User | null) => {
       profile.experienceYears !== undefined ? profile.experienceYears : null,
     )}`,
     `Preferred time commitment: ${formatPromptValue(profile.timeCommitment)}`,
+    `Career goals: ${formatPromptValue(extendedProfile?.careerGoals ?? goalSettingData?.careerGoals)}`,
+    `Skills to improve: ${formatPromptValue(extendedProfile?.skillsToImprove ?? goalSettingData?.skillsToImprove)}`,
     `Career level: ${formatPromptValue(extendedProfile?.careerLevel)}`,
     `Has work experience: ${formatPromptValue(extendedProfile?.hasWorkExperience)}`,
     '',
@@ -119,6 +124,25 @@ const buildWoopIntakePrompt = (user: User | null) => {
     });
   } else {
     goalSettingLinesSections.push('Assessment questionnaire responses: Not provided by the user.');
+  }
+
+  if (goalSettingData) {
+    goalSettingLinesSections.push(
+      '',
+      'EXTENDED GOAL SETTING (Opportunity Track)',
+      `Business idea or career vision: ${formatPromptValue(goalSettingData.businessIdea)}`,
+      `Time commitment: ${formatPromptValue(goalSettingData.timeCommitment)}`,
+      `Career goals: ${formatPromptValue(goalSettingData.careerGoals)}`,
+      `Skills to improve: ${formatPromptValue(goalSettingData.skillsToImprove)}`
+    );
+  }
+
+  if (wageQuestionnaire) {
+    goalSettingLinesSections.push(
+      '',
+      'WAGE EMPLOYMENT QUESTIONNAIRE',
+      `Work experience summary: ${formatPromptValue(wageQuestionnaire.workExperience)}`
+    );
   }
 
   goalSettingLinesSections.push(
