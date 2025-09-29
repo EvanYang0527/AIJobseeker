@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
 import { GoalSetting } from './GoalSetting';
-import { ProgressStep } from '../../../types';
+import { ProgressStep, User } from '../../../types';
+import { WoopIntakeSummary, WoopWish, WoopOutcome, WoopObstacles, WoopPlan } from '../../../types/woop';
+import { AzureChatMessage, callAzureChatCompletion, parseAzureJSON } from '../../../utils/azureOpenAI';
 import { AssessmentResults } from '../../assessment/AssessmentResults';
-import { 
-  Brain, 
-  Target, 
-  MessageCircle, 
+import {
+  Brain,
+  Target,
+  MessageCircle,
   Award, 
   ArrowRight, 
   CheckCircle, 
@@ -28,7 +30,8 @@ import {
   Sparkles,
   Download,
   ExternalLink,
-  BookOpen
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 const entrepreneurSteps: ProgressStep[] = [
@@ -40,6 +43,238 @@ const entrepreneurSteps: ProgressStep[] = [
   { id: 'networking-funding', label: 'Networking and Funding Resources', completed: false, current: false },
   { id: 'skills-passport-certificate', label: 'Skills Passport Certificate', completed: false, current: false }
 ];
+
+const formatPromptValue = (value: unknown): string => {
+  if (value === undefined || value === null) {
+    return 'Not provided by the user.';
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : 'Not provided by the user.';
+  }
+
+  if (typeof value === 'number') {
+    return value.toString();
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (error) {
+    console.error('Failed to stringify prompt value', error, value);
+    return String(value);
+  }
+};
+
+const buildWoopIntakePrompt = (user: User | null) => {
+  const profile = user?.profile ?? {};
+  const skillcraftText = profile.skillcraftResults
+    ? formatPromptValue(profile.skillcraftResults)
+    : 'No SkillCraft PDF text was provided by the user. Capture this gap under assumptions.';
+
+  const goalSettingLines = [
+    `Business idea summary: ${formatPromptValue(profile.businessIdea)}`,
+    `Business category: ${formatPromptValue(profile.businessCategory)}`,
+    `Relevant experience in years: ${formatPromptValue(
+      profile.experienceYears !== undefined ? profile.experienceYears : null,
+    )}`,
+    `Preferred time commitment: ${formatPromptValue(profile.timeCommitment)}`,
+    `User location: ${formatPromptValue(user?.location)}`,
+    `Primary contact email: ${formatPromptValue(user?.email)}`,
+    `Phone number: ${formatPromptValue(user?.phoneNumber)}`,
+  ].join('\n');
+
+  return `ROLE
+You are the Intake Summarizer for the Entrepreneur WOOP Plan Coach.
+
+OBJECTIVE
+Ingest the attached SkillCraft report (PDF text below) and the goal-setting text captured from the user. Produce a single, durable JSON summary we can reuse for subsequent W-O-O-P business-plan steps. DO NOT retrieve any data. Do NOT search for courses. Do NOT fabricate facts. If information is missing or unclear, add it to "assumptions" and set "confidence":"low".
+
+INPUTS
+[SKILLCRAFT_PDF]
+${skillcraftText}
+
+[GOAL_SETTING_TEXT]
+${goalSettingLines}
+
+RULES
+- Use ONLY these inputs; no outside knowledge.
+- Normalize skills/personality into consistent fields (see schema).
+- Extract measurable constraints (e.g., hours/week, budget bands) if present.
+- Prefer short, decision-ready bullets in arrays.
+- If you infer mappings (e.g., personality -> risk), mark them under "derived_insights" and include a brief rationale.
+- Output VALID JSON that conforms EXACTLY to the schema below. Output JSON only—no additional text.
+
+OUTPUT JSON SCHEMA
+{
+  "user_profile": {
+    "name": "string|null",
+    "persona": "aspiring_entrepreneur|existing_entrepreneur|unemployed_youth|experienced_worker|general_jobseeker|null",
+    "region": "string|null",
+    "language": "string|null",
+    "stage": "idea|MVP|early_revenue|scaling|null",
+    "timezone": "string|null"
+  },
+  "summary": "string: a paragraph includes all key information",
+  "goal_setting": {
+    "primary_goal": "string",
+    "timeframe": "24h|4w|3m|12m|none|null",
+    "previous_experience": ["string", "..."],
+    "current_skills": ["string", "..."],
+    "target_roles_or_markets": ["string", "..."],
+    "current_challenges": ["string", "..."],
+    "time_commitment_hours_per_week": "number|null",
+    "budget_usd_cap": "number|null",
+    "constraints": ["string", "..."]
+  },
+  "skillcraft_summary": {
+    "top_skills": [
+      {"name": "string", "evidence": "string"}
+    ],
+    "personality": {
+      "extraversion": "low|medium|high|null",
+      "agreeableness": "low|medium|high|null",
+      "conscientiousness": "low|medium|high|null",
+      "emotional_regulation": "low|medium|high|null",
+      "openness": "low|medium|high|null",
+      "notes": "string"
+    },
+    "source_doc": "SkillCraft PDF"
+  },
+  "derived_insights": {
+    "strengths": ["string", "..."],
+    "risks": ["string", "..."],
+    "capability_gaps": ["string", "..."],
+    "learning_topics": ["string", "..."],
+    "personality_implications": ["string", "..."]
+  },
+  "availability": {
+    "weekly_windows": [{"day":"Mon|Tue|...","start_local":"HH:MM","end_local":"HH:MM"}],
+    "notes": "string"
+  },
+  "normalizations": {
+    "skills_taxonomy": [{"raw":"string","normalized":"string"}],
+    "personality_mapping_notes": "string"
+  },
+  "assumptions": ["string", "..."],
+  "confidence": "high|medium|low",
+  "tokens_estimate": 0
+}
+
+VALIDATION
+- If a required field is truly absent, set it to null and explain in "assumptions".
+- Keep arrays compact and specific.
+
+RETURN
+Return JSON only that matches the schema.
+`;
+};
+
+const WOOP_WISH_PROMPT = `You are the Entrepreneur WOOP Plan Coach.
+We are now focusing on the **Wish** part of WOOP.
+
+TASK:
+- Extract and clearly phrase the user’s *most meaningful business wish* from their inputs.
+- Ensure the wish is ambitious yet feasible within the user’s stage, skills, and constraints.
+- Reframe vague desires (e.g., “see if this can be real”) into a concrete, motivational statement.
+- If multiple wishes are implied, help the user prioritize the ONE most impactful wish.
+- Output in short, plain language (1–2 sentences).
+
+RULES:
+- Use only user-provided inputs (profile, goals, skills, challenges).
+- Do not fabricate market data, funding sources, or business outcomes.
+- If clarity is missing, include a clarifying question to the user.
+- Keep tone encouraging but decision-oriented.
+- No long explanations; just the final wish statement (+ clarifying question if needed).
+
+OUTPUT FORMAT:
+{
+  "wish_statement": "string",
+  "rationale": "short note on why this is the most impactful wish",
+  "clarifying_question": "string|null"
+}
+`;
+
+const WOOP_OUTCOME_PROMPT = `You are the Entrepreneur WOOP Plan Coach.
+We are now focusing on the **Outcome** part of WOOP.
+
+TASK:
+- Translate the user’s wish into **specific, measurable outcomes** that show what success looks like.
+- Outcomes should be **concrete, positive, and motivating** (e.g., “50 paying customers in 8 weeks”).
+- Identify **1–3 key metrics or benchmarks** aligned with the user’s stage, skills, and constraints.
+- If user inputs are vague (e.g., “see if this is real”), reframe into outcomes that are observable and testable.
+- If clarity is missing (e.g., no numbers, no timeframe), add a clarifying question for the user.
+
+RULES:
+- Use ONLY user-provided inputs; do not invent market sizes, industry averages, or external benchmarks.
+- Outcomes must be realistic given time/budget constraints, but still stretch the user.
+- Keep language concise and decision-ready.
+
+OUTPUT FORMAT:
+{
+  "positive_outcome": "string (short, motivating phrase)",
+  "success_metrics": ["metric 1", "metric 2", "..."],
+  "rationale": "short note on why these outcomes are meaningful",
+  "clarifying_question": "string|null"
+}
+`;
+
+const WOOP_OBSTACLE_PROMPT = `You are the Entrepreneur WOOP Plan Coach.
+We are now focusing on the **Obstacle** part of WOOP.
+
+TASK:
+- Identify the **main internal obstacles** (e.g., skills, habits, confidence gaps) and **external obstacles** (e.g., permits, money, time, market uncertainty) that could prevent the user from achieving their wish and outcome.
+- Phrase obstacles as **realistic, specific blockers** — not generic (“failure” or “competition”).
+- Distinguish between **capability gaps** (skills/knowledge missing) and **practical risks** (time, budget, permits, demand).
+- Limit to the **top 3–5 obstacles** to keep it actionable.
+- If input is unclear, include a clarifying question for the user.
+
+RULES:
+- Use ONLY user-provided inputs (profile, skills, challenges, constraints).
+- Do not add fabricated risks beyond what is plausible from the data.
+- Keep phrasing short, concrete, and decision-ready.
+
+OUTPUT FORMAT:
+{
+  "internal_obstacles": ["string", "..."],
+  "external_obstacles": ["string", "..."],
+  "capability_gaps": ["string", "..."],
+  "rationale": "short note on why these obstacles are critical to address",
+  "clarifying_question": "string|null"
+}
+`;
+
+const WOOP_PLAN_PROMPT = `You are the Entrepreneur WOOP Plan Coach.
+We are now focusing on the **Plan** part of WOOP.
+
+TASK:
+- Propose a **step-by-step business roadmap** that addresses the user’s wish, outcome, and obstacles.
+- Each step should be small, concrete, and time-bounded (what to do, when, and how).
+- Define what to measure at each step to confirm progress.
+- Highlight **budget, operational, and go-to-market (GTM)** considerations relevant to their stage.
+
+LEARNING PLAN:
+- Identify the **critical skills** the user must develop to achieve outcomes and overcome obstacles.
+- For each skill, generate a **set of 10 concrete courses
+- Do NOT fabricate course names or details. Always rely on retrieval.
+
+RULES:
+- Use ONLY user-provided inputs (skills, goals, obstacles).
+- Explicitly emphasize that course lists come from retrieval, not model invention.
+- Keep all business steps and learning plan items concise, decision-ready, and aligned with the user’s stage (idea, MVP, early revenue, scaling).
+
+OUTPUT FORMAT:
+{
+  "roadmap_steps": [
+    {"step": "string", "actions": ["string", "..."], "measurement": "string", "timeline": "string"}
+  ],
+  "business_plan": {
+    "budget_considerations": ["string", "..."],
+    "ops_considerations": ["string", "..."],
+    "gtm_considerations": ["string", "..."]
+  }
+}
+`;
 
 export const EntrepreneurDashboard: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -59,6 +294,13 @@ export const EntrepreneurDashboard: React.FC = () => {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [woopSummary, setWoopSummary] = useState<WoopIntakeSummary | null>(null);
+  const [woopWish, setWoopWish] = useState<WoopWish | null>(null);
+  const [woopOutcome, setWoopOutcome] = useState<WoopOutcome | null>(null);
+  const [woopObstacles, setWoopObstacles] = useState<WoopObstacles | null>(null);
+  const [woopPlan, setWoopPlan] = useState<WoopPlan | null>(null);
+  const [woopLoading, setWoopLoading] = useState(false);
+  const [woopError, setWoopError] = useState<string | null>(null);
 
   const handleStepClick = (stepId: string) => {
     const completedSteps = user?.progress?.completedSteps || [];
@@ -77,6 +319,60 @@ export const EntrepreneurDashboard: React.FC = () => {
 
   const handleToggleResults = () => {
     setShowResults(!showResults);
+  };
+
+  const handleGenerateWoopReport = async () => {
+    if (woopLoading) {
+      return;
+    }
+
+    setWoopLoading(true);
+    setWoopError(null);
+
+    try {
+      const conversationHistory: AzureChatMessage[] = [];
+
+      const runStep = async <T,>(prompt: string, label: string, maxTokens?: number) => {
+        const messages: AzureChatMessage[] = [...conversationHistory, { role: 'user', content: prompt }];
+        const responseText = await callAzureChatCompletion(messages, {
+          maxTokens: maxTokens ?? 900
+        });
+
+        conversationHistory.push({ role: 'user', content: prompt });
+        conversationHistory.push({ role: 'assistant', content: responseText });
+
+        try {
+          return parseAzureJSON<T>(responseText);
+        } catch (error) {
+          console.error(`Failed to parse ${label} response`, error, responseText);
+          throw new Error(`Unable to parse ${label} response into JSON.`);
+        }
+      };
+
+      const intakePrompt = buildWoopIntakePrompt(user);
+      const intake = await runStep<WoopIntakeSummary>(intakePrompt, 'intake summary', 1600);
+      setWoopSummary(intake);
+
+      const wish = await runStep<WoopWish>(WOOP_WISH_PROMPT, 'wish', 600);
+      setWoopWish(wish);
+
+      const outcome = await runStep<WoopOutcome>(WOOP_OUTCOME_PROMPT, 'outcome', 700);
+      setWoopOutcome(outcome);
+
+      const obstacles = await runStep<WoopObstacles>(WOOP_OBSTACLE_PROMPT, 'obstacles', 700);
+      setWoopObstacles(obstacles);
+
+      const plan = await runStep<WoopPlan>(WOOP_PLAN_PROMPT, 'plan', 900);
+      setWoopPlan(plan);
+    } catch (error) {
+      if (error instanceof Error) {
+        setWoopError(error.message);
+      } else {
+        setWoopError('An unknown error occurred while generating the WOOP report.');
+      }
+    } finally {
+      setWoopLoading(false);
+    }
   };
 
   const completeStep = (stepId: string, nextStepId?: string) => {
@@ -309,485 +605,664 @@ export const EntrepreneurDashboard: React.FC = () => {
       case 'goal-setting':
         return <GoalSetting onComplete={() => completeStep('goal-setting', 'business-plan-creation')} />;
 
-      case 'business-plan-creation':
+      case 'business-plan-creation': {
+        const hasWoopReport =
+          Boolean(woopSummary && woopWish && woopOutcome && woopObstacles && woopPlan);
+        const readableTimeframe = (() => {
+          if (!woopSummary) return 'Not specified';
+          switch (woopSummary.goal_setting.timeframe) {
+            case '24h':
+              return '24 hours';
+            case '4w':
+              return '4 weeks';
+            case '3m':
+              return '3 months';
+            case '12m':
+              return '12 months';
+            case 'none':
+              return 'None specified';
+            default:
+              return 'Not specified';
+          }
+        })();
+        const goalSetting = woopSummary?.goal_setting;
+        const topSkills = woopSummary?.skillcraft_summary.top_skills ?? [];
+        const personality = woopSummary?.skillcraft_summary.personality;
+        const derivedInsights = woopSummary?.derived_insights;
+        const availability = woopSummary?.availability;
+        const assumptions = woopSummary?.assumptions ?? [];
+        const normalizedSkills = woopSummary?.normalizations?.skills_taxonomy ?? [];
+        const strengths = derivedInsights?.strengths ?? [];
+        const risks = derivedInsights?.risks ?? [];
+        const capabilityGaps = derivedInsights?.capability_gaps ?? [];
+        const learningTopics = derivedInsights?.learning_topics ?? [];
+        const personalityImplications = derivedInsights?.personality_implications ?? [];
+        const availabilityWindows = availability?.weekly_windows ?? [];
+        const roadmapSteps = woopPlan?.roadmap_steps ?? [];
+        const budgetConsiderations = woopPlan?.business_plan?.budget_considerations ?? [];
+        const opsConsiderations = woopPlan?.business_plan?.ops_considerations ?? [];
+        const gtmConsiderations = woopPlan?.business_plan?.gtm_considerations ?? [];
+
         return (
           <div className="p-8 bg-neuro-bg">
             <div className="neuro-card hover:shadow-neuro-hover transition-all duration-300">
               <div className="text-center mb-8">
-                <div className="w-24 h-24 neuro-icon mx-auto mb-6 bg-gradient-to-br from-neuro-secondary to-pink-400 neuro-animate-float">
+                <div className="w-24 h-24 neuro-icon mx-auto mb-6 bg-gradient-to-br from-neuro-primary to-neuro-primary-light neuro-animate-float">
                   <FileText className="w-12 h-12 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold neuro-text-primary mb-4">Business Plan Creation</h2>
                 <p className="text-lg neuro-text-secondary max-w-2xl mx-auto">
-                  Comprehensive business plan development using the WOOP framework with AI-powered insights.
+                  Generate an Azure OpenAI-powered WOOP business plan tailored to your entrepreneurial goals.
                 </p>
               </div>
 
-              {/* WOOP Framework Implementation */}
-              <div className="space-y-8">
-                {/* Wish Section */}
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <div className="flex items-center mb-6">
-                    <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light mr-4">
-                      <span className="text-white font-bold text-2xl">W</span>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold neuro-text-primary">Wish</h3>
-                      <p className="neuro-text-secondary">Your business vision and aspirations</p>
-                    </div>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                <div>
+                  <h3 className="text-xl font-semibold neuro-text-primary">Automated WOOP report</h3>
+                  <p className="text-sm md:text-base neuro-text-secondary">
+                    Azure OpenAI is called five times: first to assemble a structured intake summary, then once for each WOOP pillar (Wish, Outcome, Obstacles, Plan) while preserving conversation history.
+                  </p>
+                </div>
+                <button
+                  onClick={handleGenerateWoopReport}
+                  disabled={woopLoading}
+                  className={`neuro-button-primary inline-flex items-center justify-center px-6 py-3 rounded-neuro-lg text-base font-semibold transition-all duration-300 ${
+                    woopLoading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'
+                  }`}
+                >
+                  {woopLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Generate WOOP Report
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {woopError && (
+                <div className="neuro-inset p-5 rounded-neuro border border-neuro-error/40 bg-neuro-error/10 text-neuro-error mb-6 flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">Azure OpenAI request failed</p>
+                    <p className="text-sm opacity-80">{woopError}</p>
                   </div>
-                  
-                  <div className="neuro-inset p-6 rounded-neuro mb-4">
-                    <h4 className="font-bold neuro-text-primary mb-3">Wish Statement</h4>
-                    <p className="neuro-text-primary text-lg mb-4">
-                      "I want to create an AI-powered customer service platform that helps small businesses provide 24/7 support to their customers, increasing satisfaction and reducing operational costs."
-                    </p>
-                    <div className="neuro-surface p-4 rounded-neuro">
-                      <h5 className="font-semibold neuro-text-primary mb-2">Rationale</h5>
-                      <p className="neuro-text-secondary">
-                        This addresses a critical pain point for small businesses who can't afford full-time customer service teams, while leveraging emerging AI technology to create a scalable solution.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="neuro-surface p-4 rounded-neuro bg-gradient-to-r from-neuro-primary/10 to-neuro-primary-light/10">
-                    <h5 className="font-semibold neuro-text-primary mb-2">💡 Clarifying Question</h5>
-                    <p className="neuro-text-secondary">
-                      What specific industries or business sizes would you focus on initially to validate your solution?
+                </div>
+              )}
+
+              {woopLoading && (
+                <div className="neuro-inset p-6 rounded-neuro flex items-start space-x-4 mb-6">
+                  <Loader2 className="w-6 h-6 text-neuro-primary animate-spin mt-1" />
+                  <div>
+                    <p className="font-semibold neuro-text-primary">Generating WOOP plan...</p>
+                    <p className="text-sm neuro-text-secondary">
+                      Azure OpenAI is synthesizing your SkillCraft data and goals across sequential calls. This may take a few moments.
                     </p>
                   </div>
                 </div>
+              )}
 
-                {/* Outcome Section */}
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <div className="flex items-center mb-6">
-                    <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-success to-green-400 mr-4">
-                      <span className="text-white font-bold text-2xl">O</span>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold neuro-text-primary">Outcome</h3>
-                      <p className="neuro-text-secondary">Expected positive results and success metrics</p>
-                    </div>
-                  </div>
-                  
-                  <div className="neuro-inset p-6 rounded-neuro mb-4">
-                    <h4 className="font-bold neuro-text-primary mb-3">Positive Outcome</h4>
-                    <p className="neuro-text-primary text-xl font-semibold mb-4 text-center bg-gradient-to-r from-neuro-success to-green-400 bg-clip-text text-transparent">
-                      "Empowering 1000+ small businesses with affordable AI customer service"
-                    </p>
-                    
-                    <div className="grid md:grid-cols-2 gap-6 mb-4">
-                      <div>
-                        <h5 className="font-semibold neuro-text-primary mb-3">Success Metrics</h5>
-                        <div className="space-y-2">
-                          {[
-                            "100 paying customers within 12 months",
-                            "$50K monthly recurring revenue by year 2",
-                            "95% customer satisfaction rating",
-                            "50% reduction in customer service costs for clients",
-                            "24/7 response time under 30 seconds"
-                          ].map((metric, index) => (
-                            <div key={index} className="flex items-center">
-                              <div className="w-6 h-6 neuro-icon bg-gradient-to-br from-neuro-success to-green-400 mr-3">
-                                <CheckCircle className="w-3 h-3 text-white" />
-                              </div>
-                              <span className="neuro-text-secondary">{metric}</span>
-                            </div>
-                          ))}
-                        </div>
+              {hasWoopReport ? (
+                <div className="space-y-8">
+                  <div className="neuro-surface p-8 rounded-neuro-lg space-y-6">
+                    <div className="flex items-center">
+                      <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light mr-4">
+                        <Sparkles className="w-8 h-8 text-white" />
                       </div>
-                      
-                      <div className="neuro-surface p-4 rounded-neuro">
-                        <h5 className="font-semibold neuro-text-primary mb-2">Rationale</h5>
+                      <div>
+                        <h3 className="text-2xl font-bold neuro-text-primary">WOOP Intake Summary</h3>
                         <p className="neuro-text-secondary">
-                          These outcomes focus on measurable business impact while ensuring customer value creation. The metrics balance growth targets with quality service delivery.
+                          Structured profile synthesized from SkillCraft insights and goal-setting inputs.
                         </p>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="neuro-surface p-4 rounded-neuro bg-gradient-to-r from-neuro-success/10 to-green-400/10">
-                    <h5 className="font-semibold neuro-text-primary mb-2">💡 Clarifying Question</h5>
-                    <p className="neuro-text-secondary">
-                      How will you measure customer satisfaction and what specific cost reduction targets are realistic for your target market?
-                    </p>
-                  </div>
-                </div>
+                    <p className="neuro-text-primary leading-relaxed">{woopSummary?.summary}</p>
 
-                {/* Obstacles Section */}
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <div className="flex items-center mb-6">
-                    <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-warning to-yellow-400 mr-4">
-                      <span className="text-white font-bold text-2xl">O</span>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold neuro-text-primary">Obstacles</h3>
-                      <p className="neuro-text-secondary">Potential challenges and barriers to overcome</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid md:grid-cols-3 gap-6 mb-4">
-                    <div className="neuro-inset p-6 rounded-neuro">
-                      <h4 className="font-bold neuro-text-primary mb-4 flex items-center">
-                        <div className="w-8 h-8 neuro-icon bg-gradient-to-br from-neuro-error to-red-400 mr-3">
-                          <span className="text-white font-bold text-sm">I</span>
-                        </div>
-                        Internal Obstacles
-                      </h4>
-                      <div className="space-y-2">
-                        {[
-                          "Limited technical AI/ML expertise",
-                          "Insufficient startup capital",
-                          "Lack of business development experience",
-                          "Time management with full-time commitments"
-                        ].map((obstacle, index) => (
-                          <div key={index} className="flex items-start">
-                            <span className="w-2 h-2 bg-neuro-error rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                            <span className="neuro-text-secondary text-sm">{obstacle}</span>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="neuro-inset p-5 rounded-neuro space-y-3">
+                        <h4 className="font-semibold neuro-text-primary">Goal Setting</h4>
+                        <div className="text-sm neuro-text-secondary space-y-2">
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Primary goal:</span>{' '}
+                            {goalSetting?.primary_goal || 'Not specified'}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="neuro-inset p-6 rounded-neuro">
-                      <h4 className="font-bold neuro-text-primary mb-4 flex items-center">
-                        <div className="w-8 h-8 neuro-icon bg-gradient-to-br from-neuro-warning to-yellow-400 mr-3">
-                          <span className="text-white font-bold text-sm">E</span>
-                        </div>
-                        External Obstacles
-                      </h4>
-                      <div className="space-y-2">
-                        {[
-                          "Competitive market with established players",
-                          "Economic uncertainty affecting small business spending",
-                          "Regulatory compliance for AI and data privacy",
-                          "Customer education about AI benefits"
-                        ].map((obstacle, index) => (
-                          <div key={index} className="flex items-start">
-                            <span className="w-2 h-2 bg-neuro-warning rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                            <span className="neuro-text-secondary text-sm">{obstacle}</span>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Timeframe:</span>{' '}
+                            {readableTimeframe}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="neuro-inset p-6 rounded-neuro">
-                      <h4 className="font-bold neuro-text-primary mb-4 flex items-center">
-                        <div className="w-8 h-8 neuro-icon bg-gradient-to-br from-neuro-secondary to-pink-400 mr-3">
-                          <span className="text-white font-bold text-sm">C</span>
-                        </div>
-                        Capability Gaps
-                      </h4>
-                      <div className="space-y-2">
-                        {[
-                          "Machine learning model development",
-                          "Enterprise sales and marketing",
-                          "Customer success management",
-                          "Scalable infrastructure design"
-                        ].map((gap, index) => (
-                          <div key={index} className="flex items-start">
-                            <span className="w-2 h-2 bg-neuro-secondary rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                            <span className="neuro-text-secondary text-sm">{gap}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="neuro-surface p-4 rounded-neuro mb-4">
-                    <h5 className="font-semibold neuro-text-primary mb-2">Rationale</h5>
-                    <p className="neuro-text-secondary">
-                      These obstacles represent the most critical barriers that could prevent business success. Addressing them proactively through planning and skill development is essential for sustainable growth.
-                    </p>
-                  </div>
-                  
-                  <div className="neuro-surface p-4 rounded-neuro bg-gradient-to-r from-neuro-warning/10 to-yellow-400/10">
-                    <h5 className="font-semibold neuro-text-primary mb-2">💡 Clarifying Question</h5>
-                    <p className="neuro-text-secondary">
-                      Which of these obstacles do you feel most confident about overcoming, and which ones would you need the most support with?
-                    </p>
-                  </div>
-                </div>
-
-                {/* Plan Section */}
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <div className="flex items-center mb-6">
-                    <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-secondary to-pink-400 mr-4">
-                      <span className="text-white font-bold text-2xl">P</span>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold neuro-text-primary">Plan</h3>
-                      <p className="neuro-text-secondary">Comprehensive action roadmap and business strategy</p>
-                    </div>
-                  </div>
-                  
-                  {/* Roadmap Steps */}
-                  <div className="mb-8">
-                    <h4 className="text-xl font-bold neuro-text-primary mb-6">Roadmap Steps</h4>
-                    <div className="space-y-6">
-                      {[
-                        {
-                          step: "Market Validation & MVP Development",
-                          actions: [
-                            "Conduct 50 customer interviews with small business owners",
-                            "Build basic AI chatbot prototype using existing APIs",
-                            "Test with 5 pilot customers for 30 days",
-                            "Gather feedback and iterate on core features"
-                          ],
-                          measurement: "Customer feedback scores >4/5, 80% would recommend",
-                          timeline: "Months 1-3"
-                        },
-                        {
-                          step: "Product Development & Team Building",
-                          actions: [
-                            "Hire AI/ML developer and UX designer",
-                            "Develop proprietary natural language processing",
-                            "Build scalable cloud infrastructure",
-                            "Create comprehensive onboarding system"
-                          ],
-                          measurement: "Platform handles 1000+ concurrent conversations",
-                          timeline: "Months 4-8"
-                        },
-                        {
-                          step: "Go-to-Market & Scale",
-                          actions: [
-                            "Launch digital marketing campaigns",
-                            "Establish partnership with business associations",
-                            "Implement customer success program",
-                            "Expand to 3 additional market segments"
-                          ],
-                          measurement: "100 paying customers, $50K MRR",
-                          timeline: "Months 9-12"
-                        }
-                      ].map((roadmapStep, index) => (
-                        <div key={index} className="neuro-inset p-6 rounded-neuro">
-                          <div className="flex items-start justify-between mb-4">
-                            <h5 className="text-lg font-bold neuro-text-primary">{roadmapStep.step}</h5>
-                            <span className="neuro-surface px-3 py-1 rounded-neuro-sm text-sm font-semibold text-neuro-primary">
-                              {roadmapStep.timeline}
-                            </span>
-                          </div>
-                          
-                          <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                              <h6 className="font-semibold neuro-text-primary mb-3">Actions</h6>
-                              <div className="space-y-2">
-                                {roadmapStep.actions.map((action, actionIndex) => (
-                                  <div key={actionIndex} className="flex items-start">
-                                    <div className="w-4 h-4 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light mr-3 mt-1">
-                                      <div className="w-1 h-1 bg-white rounded-full"></div>
-                                    </div>
-                                    <span className="neuro-text-secondary text-sm">{action}</span>
-                                  </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Previous experience:</span>
+                            {goalSetting?.previous_experience?.length ? (
+                              <ul className="list-disc list-inside space-y-1 mt-1">
+                                {goalSetting.previous_experience.map((item, index) => (
+                                  <li key={index}>{item}</li>
                                 ))}
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <h6 className="font-semibold neuro-text-primary mb-3">Success Measurement</h6>
-                              <div className="neuro-surface p-3 rounded-neuro">
-                                <span className="neuro-text-secondary text-sm">{roadmapStep.measurement}</span>
-                              </div>
-                            </div>
+                              </ul>
+                            ) : (
+                              <p className="italic text-xs mt-1">No previous experience noted.</p>
+                            )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Business Plan Considerations */}
-                  <div className="mb-8">
-                    <h4 className="text-xl font-bold neuro-text-primary mb-6">Business Plan Considerations</h4>
-                    <div className="grid md:grid-cols-3 gap-6">
-                      <div className="neuro-inset p-6 rounded-neuro">
-                        <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                          <DollarSign className="w-5 h-5 text-neuro-warning mr-2" />
-                          Budget Considerations
-                        </h5>
-                        <div className="space-y-2">
-                          {[
-                            "Initial development: $75K-$100K",
-                            "Monthly operational costs: $15K-$25K",
-                            "Marketing budget: $20K-$30K",
-                            "Emergency fund: 6 months runway"
-                          ].map((item, index) => (
-                            <div key={index} className="flex items-start">
-                              <span className="w-2 h-2 bg-neuro-warning rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                              <span className="neuro-text-secondary text-sm">{item}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="neuro-inset p-6 rounded-neuro">
-                        <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                          <Building2 className="w-5 h-5 text-neuro-primary mr-2" />
-                          Operations Considerations
-                        </h5>
-                        <div className="space-y-2">
-                          {[
-                            "Cloud infrastructure scaling strategy",
-                            "24/7 system monitoring and support",
-                            "Data security and privacy compliance",
-                            "Customer onboarding automation"
-                          ].map((item, index) => (
-                            <div key={index} className="flex items-start">
-                              <span className="w-2 h-2 bg-neuro-primary rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                              <span className="neuro-text-secondary text-sm">{item}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="neuro-inset p-6 rounded-neuro">
-                        <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                          <TrendingUp className="w-5 h-5 text-neuro-success mr-2" />
-                          Go-to-Market Considerations
-                        </h5>
-                        <div className="space-y-2">
-                          {[
-                            "Content marketing and SEO strategy",
-                            "Partnership with business consultants",
-                            "Free trial and freemium pricing model",
-                            "Industry conference and trade show presence"
-                          ].map((item, index) => (
-                            <div key={index} className="flex items-start">
-                              <span className="w-2 h-2 bg-neuro-success rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                              <span className="neuro-text-secondary text-sm">{item}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Learning Plan */}
-                  <div className="mb-6">
-                    <h4 className="text-xl font-bold neuro-text-primary mb-6">Learning Plan</h4>
-                    <div className="space-y-6">
-                      {[
-                        {
-                          skill: "Machine Learning & AI Development",
-                          why_needed: "Essential for building and improving the AI customer service algorithms",
-                          course_list: [
-                            {
-                              title: "Machine Learning Specialization",
-                              provider: "Coursera (Stanford)",
-                              url: "https://coursera.org/specializations/machine-learning"
-                            },
-                            {
-                              title: "Natural Language Processing with Python",
-                              provider: "Udemy",
-                              url: "https://udemy.com/course/nlp-natural-language-processing-with-python"
-                            }
-                          ],
-                          fallback_queries: [
-                            {"knowledge": "AI chatbot development tutorials"}
-                          ]
-                        },
-                        {
-                          skill: "Business Development & Sales",
-                          why_needed: "Critical for customer acquisition and revenue generation",
-                          course_list: [
-                            {
-                              title: "Sales and Marketing for Startups",
-                              provider: "edX (MIT)",
-                              url: "https://edx.org/course/entrepreneurship-and-innovation"
-                            },
-                            {
-                              title: "B2B Sales Fundamentals",
-                              provider: "LinkedIn Learning",
-                              url: "https://linkedin.com/learning/b2b-sales-fundamentals"
-                            }
-                          ],
-                          fallback_queries: [
-                            {"knowledge": "Small business sales strategies"}
-                          ]
-                        },
-                        {
-                          skill: "Financial Management & Fundraising",
-                          why_needed: "Required for managing cash flow and securing investment",
-                          course_list: [
-                            {
-                              title: "Startup Financial Modeling",
-                              provider: "Udacity",
-                              url: "https://udacity.com/course/startup-financial-modeling"
-                            },
-                            {
-                              title: "Venture Capital and Startup Funding",
-                              provider: "Coursera (University of Pennsylvania)",
-                              url: "https://coursera.org/learn/wharton-entrepreneurship-financing"
-                            }
-                          ],
-                          fallback_queries: [
-                            {"knowledge": "Startup funding strategies"}
-                          ]
-                        }
-                      ].map((learningItem, index) => (
-                        <div key={index} className="neuro-inset p-6 rounded-neuro">
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <h5 className="text-lg font-bold neuro-text-primary mb-2">{learningItem.skill}</h5>
-                              <p className="neuro-text-secondary text-sm">{learningItem.why_needed}</p>
-                            </div>
-                            <div className="w-12 h-12 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light">
-                              <BookOpen className="w-6 h-6 text-white" />
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div>
-                              <h6 className="font-semibold neuro-text-primary mb-3">Recommended Courses</h6>
-                              <div className="space-y-3">
-                                {learningItem.course_list.map((course, courseIndex) => (
-                                  <div key={courseIndex} className="neuro-surface p-4 rounded-neuro flex items-center justify-between">
-                                    <div>
-                                      <div className="font-semibold neuro-text-primary">{course.title}</div>
-                                      <div className="text-sm neuro-text-secondary">{course.provider}</div>
-                                    </div>
-                                    <a 
-                                      href={course.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="neuro-button text-sm px-4 py-2 rounded-neuro flex items-center"
-                                    >
-                                      <ExternalLink className="w-4 h-4 mr-2" />
-                                      View Course
-                                    </a>
-                                  </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Current skills:</span>
+                            {goalSetting?.current_skills?.length ? (
+                              <ul className="list-disc list-inside space-y-1 mt-1">
+                                {goalSetting.current_skills.map((item, index) => (
+                                  <li key={index}>{item}</li>
                                 ))}
-                              </div>
-                            </div>
-                            
+                              </ul>
+                            ) : (
+                              <p className="italic text-xs mt-1">No skills captured.</p>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Current challenges:</span>
+                            {goalSetting?.current_challenges?.length ? (
+                              <ul className="list-disc list-inside space-y-1 mt-1">
+                                {goalSetting.current_challenges.map((item, index) => (
+                                  <li key={index}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="italic text-xs mt-1">No challenges captured.</p>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Constraints:</span>
+                            {goalSetting?.constraints?.length ? (
+                              <ul className="list-disc list-inside space-y-1 mt-1">
+                                {goalSetting.constraints.map((item, index) => (
+                                  <li key={index}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="italic text-xs mt-1">No constraints noted.</p>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Time commitment:</span>{' '}
+                            {goalSetting?.time_commitment_hours_per_week != null
+                              ? `${goalSetting.time_commitment_hours_per_week} hrs/week`
+                              : 'Not specified'}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Budget cap:</span>{' '}
+                            {goalSetting?.budget_usd_cap != null
+                              ? `$${goalSetting.budget_usd_cap.toLocaleString()}`
+                              : 'Not specified'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="neuro-inset p-5 rounded-neuro space-y-3">
+                        <h4 className="font-semibold neuro-text-primary">SkillCraft Highlights</h4>
+                        <div className="text-sm neuro-text-secondary space-y-2">
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Top skills:</span>
+                            {topSkills.length ? (
+                              <ul className="list-disc list-inside space-y-1 mt-1">
+                                {topSkills.map((skill, index) => (
+                                  <li key={index}>
+                                    <span className="font-semibold text-neuro-primary">{skill.name}:</span>{' '}
+                                    {skill.evidence}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="italic text-xs mt-1">No SkillCraft skills provided.</p>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Personality notes:</span>
+                            <p className="mt-1">{personality?.notes || 'Not provided.'}</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs uppercase tracking-wide">
                             <div>
-                              <h6 className="font-semibold neuro-text-primary mb-2">Alternative Learning</h6>
-                              <div className="neuro-surface p-3 rounded-neuro">
-                                <span className="neuro-text-secondary text-sm">
-                                  Search for: {learningItem.fallback_queries[0].knowledge}
-                                </span>
+                              Extraversion:{' '}
+                              <span className="text-neuro-primary font-semibold normal-case">
+                                {personality?.extraversion ?? 'n/a'}
+                              </span>
+                            </div>
+                            <div>
+                              Agreeableness:{' '}
+                              <span className="text-neuro-primary font-semibold normal-case">
+                                {personality?.agreeableness ?? 'n/a'}
+                              </span>
+                            </div>
+                            <div>
+                              Conscientiousness:{' '}
+                              <span className="text-neuro-primary font-semibold normal-case">
+                                {personality?.conscientiousness ?? 'n/a'}
+                              </span>
+                            </div>
+                            <div>
+                              Emotional regulation:{' '}
+                              <span className="text-neuro-primary font-semibold normal-case">
+                                {personality?.emotional_regulation ?? 'n/a'}
+                              </span>
+                            </div>
+                            <div>
+                              Openness:{' '}
+                              <span className="text-neuro-primary font-semibold normal-case">
+                                {personality?.openness ?? 'n/a'}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Source:</span>{' '}
+                            {woopSummary?.skillcraft_summary.source_doc}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="neuro-inset p-5 rounded-neuro space-y-4">
+                        <h4 className="font-semibold neuro-text-primary">Derived Insights</h4>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {[
+                            { title: 'Strengths', items: strengths },
+                            { title: 'Risks', items: risks },
+                            { title: 'Capability gaps', items: capabilityGaps },
+                            { title: 'Learning topics', items: learningTopics },
+                            { title: 'Personality implications', items: personalityImplications }
+                          ].map((section) => (
+                            <div key={section.title}>
+                              <h5 className="font-semibold text-neuro-primary text-sm mb-1">{section.title}</h5>
+                              {section.items.length ? (
+                                <ul className="list-disc list-inside space-y-1 text-sm neuro-text-secondary">
+                                  {section.items.map((item, index) => (
+                                    <li key={index}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-xs italic neuro-text-secondary">Not provided.</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="neuro-inset p-5 rounded-neuro space-y-4">
+                        <h4 className="font-semibold neuro-text-primary">Logistics & Confidence</h4>
+                        <div className="text-sm neuro-text-secondary space-y-3">
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Assumptions:</span>
+                            {assumptions.length ? (
+                              <ul className="list-disc list-inside space-y-1 mt-1">
+                                {assumptions.map((item, index) => (
+                                  <li key={index}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="italic text-xs mt-1">No assumptions captured.</p>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Confidence:</span>{' '}
+                            {woopSummary?.confidence ?? 'Not specified'}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Availability:</span>
+                            {availabilityWindows.length ? (
+                              <ul className="list-disc list-inside space-y-1 mt-1">
+                                {availabilityWindows.map((window, index) => (
+                                  <li key={`${window.day}-${index}`}>
+                                    {window.day}: {window.start_local} - {window.end_local}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="italic text-xs mt-1">No availability provided.</p>
+                            )}
+                            {availability?.notes && (
+                              <p className="text-xs mt-2 italic">{availability.notes}</p>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-neuro-primary">Normalized skills:</span>
+                            {normalizedSkills.length ? (
+                              <ul className="list-disc list-inside space-y-1 mt-1">
+                                {normalizedSkills.map((item, index) => (
+                                  <li key={index}>
+                                    {item.raw} → <span className="font-semibold text-neuro-primary">{item.normalized}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="italic text-xs mt-1">No skill mappings captured.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-8">
+                    {/* Wish Section */}
+                    <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <div className="flex items-center mb-6">
+                        <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light mr-4">
+                          <span className="text-white font-bold text-2xl">W</span>
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold neuro-text-primary">Wish</h3>
+                          <p className="neuro-text-secondary">Ambitious yet achievable business aspiration</p>
+                        </div>
+                      </div>
+
+                      <div className="neuro-inset p-6 rounded-neuro mb-4">
+                        <h4 className="font-bold neuro-text-primary mb-3">Wish Statement</h4>
+                        <p className="neuro-text-primary text-lg mb-4">{woopWish?.wish_statement}</p>
+                        <div className="neuro-surface p-4 rounded-neuro">
+                          <h5 className="font-semibold neuro-text-primary mb-2">Rationale</h5>
+                          <p className="neuro-text-secondary">{woopWish?.rationale}</p>
+                        </div>
+                      </div>
+
+                      {woopWish?.clarifying_question && (
+                        <div className="neuro-surface p-4 rounded-neuro bg-gradient-to-r from-neuro-primary/10 to-neuro-primary-light/10">
+                          <h5 className="font-semibold neuro-text-primary mb-2">💡 Clarifying Question</h5>
+                          <p className="neuro-text-secondary">{woopWish.clarifying_question}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Outcome Section */}
+                    <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <div className="flex items-center mb-6">
+                        <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-success to-green-400 mr-4">
+                          <span className="text-white font-bold text-2xl">O</span>
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold neuro-text-primary">Outcome</h3>
+                          <p className="neuro-text-secondary">Visible signals of success</p>
+                        </div>
+                      </div>
+
+                      <div className="neuro-inset p-6 rounded-neuro mb-4">
+                        <h4 className="font-bold neuro-text-primary mb-3">Positive Outcome</h4>
+                        <p className="neuro-text-primary text-xl font-semibold mb-4 text-center bg-gradient-to-r from-neuro-success to-green-400 bg-clip-text text-transparent">
+                          {woopOutcome?.positive_outcome}
+                        </p>
+
+                        <div className="grid md:grid-cols-2 gap-6 mb-4">
+                          <div>
+                            <h5 className="font-semibold neuro-text-primary mb-3">Success Metrics</h5>
+                            <div className="space-y-2">
+                              {(woopOutcome?.success_metrics ?? []).length ? (
+                                woopOutcome?.success_metrics.map((metric, index) => (
+                                  <div key={index} className="flex items-center">
+                                    <div className="w-6 h-6 neuro-icon bg-gradient-to-br from-neuro-success to-green-400 mr-3">
+                                      <CheckCircle className="w-3 h-3 text-white" />
+                                    </div>
+                                    <span className="neuro-text-secondary">{metric}</span>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm neuro-text-secondary italic">No metrics provided.</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="neuro-surface p-4 rounded-neuro">
+                            <h5 className="font-semibold neuro-text-primary mb-2">Rationale</h5>
+                            <p className="neuro-text-secondary">{woopOutcome?.rationale}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {woopOutcome?.clarifying_question && (
+                        <div className="neuro-surface p-4 rounded-neuro bg-gradient-to-r from-neuro-success/10 to-green-400/10">
+                          <h5 className="font-semibold neuro-text-primary mb-2">💡 Clarifying Question</h5>
+                          <p className="neuro-text-secondary">{woopOutcome.clarifying_question}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Obstacles Section */}
+                    <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <div className="flex items-center mb-6">
+                        <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-warning to-yellow-400 mr-4">
+                          <span className="text-white font-bold text-2xl">O</span>
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold neuro-text-primary">Obstacles</h3>
+                          <p className="neuro-text-secondary">Key blockers to anticipate</p>
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-3 gap-6 mb-4">
+                        <div className="neuro-inset p-6 rounded-neuro">
+                          <h4 className="font-bold neuro-text-primary mb-4 flex items-center">
+                            <div className="w-8 h-8 neuro-icon bg-gradient-to-br from-neuro-error to-red-400 mr-3">
+                              <span className="text-white font-bold text-sm">I</span>
+                            </div>
+                            Internal Obstacles
+                          </h4>
+                          <div className="space-y-2">
+                            {(woopObstacles?.internal_obstacles ?? []).length ? (
+                              woopObstacles?.internal_obstacles.map((item, index) => (
+                                <div key={index} className="flex items-start">
+                                  <span className="w-2 h-2 bg-neuro-error rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                                  <span className="neuro-text-secondary text-sm">{item}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm neuro-text-secondary italic">No internal obstacles identified.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="neuro-inset p-6 rounded-neuro">
+                          <h4 className="font-bold neuro-text-primary mb-4 flex items-center">
+                            <div className="w-8 h-8 neuro-icon bg-gradient-to-br from-neuro-warning to-yellow-400 mr-3">
+                              <span className="text-white font-bold text-sm">E</span>
+                            </div>
+                            External Obstacles
+                          </h4>
+                          <div className="space-y-2">
+                            {(woopObstacles?.external_obstacles ?? []).length ? (
+                              woopObstacles?.external_obstacles.map((item, index) => (
+                                <div key={index} className="flex items-start">
+                                  <span className="w-2 h-2 bg-neuro-warning rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                                  <span className="neuro-text-secondary text-sm">{item}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm neuro-text-secondary italic">No external obstacles identified.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="neuro-inset p-6 rounded-neuro">
+                          <h4 className="font-bold neuro-text-primary mb-4 flex items-center">
+                            <div className="w-8 h-8 neuro-icon bg-gradient-to-br from-neuro-secondary to-pink-400 mr-3">
+                              <span className="text-white font-bold text-sm">C</span>
+                            </div>
+                            Capability Gaps
+                          </h4>
+                          <div className="space-y-2">
+                            {(woopObstacles?.capability_gaps ?? []).length ? (
+                              woopObstacles?.capability_gaps.map((item, index) => (
+                                <div key={index} className="flex items-start">
+                                  <span className="w-2 h-2 bg-neuro-secondary rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                                  <span className="neuro-text-secondary text-sm">{item}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm neuro-text-secondary italic">No capability gaps identified.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="neuro-surface p-4 rounded-neuro mb-4">
+                        <h5 className="font-semibold neuro-text-primary mb-2">Rationale</h5>
+                        <p className="neuro-text-secondary">{woopObstacles?.rationale}</p>
+                      </div>
+
+                      {woopObstacles?.clarifying_question && (
+                        <div className="neuro-surface p-4 rounded-neuro bg-gradient-to-r from-neuro-warning/10 to-yellow-400/10">
+                          <h5 className="font-semibold neuro-text-primary mb-2">💡 Clarifying Question</h5>
+                          <p className="neuro-text-secondary">{woopObstacles.clarifying_question}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Plan Section */}
+                    <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <div className="flex items-center mb-6">
+                        <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-secondary to-pink-400 mr-4">
+                          <span className="text-white font-bold text-2xl">P</span>
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold neuro-text-primary">Plan</h3>
+                          <p className="neuro-text-secondary">Step-by-step roadmap and business considerations</p>
+                        </div>
+                      </div>
+
+                      <div className="mb-8">
+                        <h4 className="text-xl font-bold neuro-text-primary mb-6">Roadmap Steps</h4>
+                        <div className="space-y-6">
+                          {roadmapSteps.length ? (
+                            roadmapSteps.map((step, index) => (
+                              <div key={index} className="neuro-inset p-6 rounded-neuro">
+                                <div className="flex items-start justify-between mb-4">
+                                  <h5 className="text-lg font-bold neuro-text-primary">{step.step}</h5>
+                                  <span className="neuro-surface px-3 py-1 rounded-neuro-sm text-sm font-semibold text-neuro-primary">
+                                    {step.timeline || 'Timeline TBD'}
+                                  </span>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                  <div>
+                                    <h6 className="font-semibold neuro-text-primary mb-3">Actions</h6>
+                                    <div className="space-y-2">
+                                      {step.actions?.length ? (
+                                        step.actions.map((action, actionIndex) => (
+                                          <div key={actionIndex} className="flex items-start">
+                                            <div className="w-4 h-4 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light mr-3 mt-1">
+                                              <div className="w-1 h-1 bg-white rounded-full"></div>
+                                            </div>
+                                            <span className="neuro-text-secondary text-sm">{action}</span>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <p className="text-sm neuro-text-secondary italic">No actions provided.</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <h6 className="font-semibold neuro-text-primary mb-3">Success Measurement</h6>
+                                    <div className="neuro-surface p-3 rounded-neuro">
+                                      <span className="neuro-text-secondary text-sm">{step.measurement || 'No measurement specified.'}</span>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
+                            ))
+                          ) : (
+                            <p className="text-sm neuro-text-secondary italic">No roadmap steps provided.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-xl font-bold neuro-text-primary mb-6">Business Plan Considerations</h4>
+                        <div className="grid md:grid-cols-3 gap-6">
+                          <div className="neuro-inset p-6 rounded-neuro">
+                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
+                              <DollarSign className="w-5 h-5 text-neuro-warning mr-2" />
+                              Budget Considerations
+                            </h5>
+                            <div className="space-y-2">
+                              {budgetConsiderations.length ? (
+                                budgetConsiderations.map((item, index) => (
+                                  <div key={index} className="flex items-start">
+                                    <span className="w-2 h-2 bg-neuro-warning rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                                    <span className="neuro-text-secondary text-sm">{item}</span>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm neuro-text-secondary italic">No budget notes provided.</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="neuro-inset p-6 rounded-neuro">
+                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
+                              <Building2 className="w-5 h-5 text-neuro-primary mr-2" />
+                              Operations Considerations
+                            </h5>
+                            <div className="space-y-2">
+                              {opsConsiderations.length ? (
+                                opsConsiderations.map((item, index) => (
+                                  <div key={index} className="flex items-start">
+                                    <span className="w-2 h-2 bg-neuro-primary rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                                    <span className="neuro-text-secondary text-sm">{item}</span>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm neuro-text-secondary italic">No operations notes provided.</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="neuro-inset p-6 rounded-neuro">
+                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
+                              <TrendingUp className="w-5 h-5 text-neuro-secondary mr-2" />
+                              GTM Considerations
+                            </h5>
+                            <div className="space-y-2">
+                              {gtmConsiderations.length ? (
+                                gtmConsiderations.map((item, index) => (
+                                  <div key={index} className="flex items-start">
+                                    <span className="w-2 h-2 bg-neuro-secondary rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                                    <span className="neuro-text-secondary text-sm">{item}</span>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm neuro-text-secondary italic">No GTM notes provided.</p>
+                              )}
                             </div>
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                !woopLoading && (
+                  <div className="neuro-inset p-8 rounded-neuro text-center text-neuro-secondary">
+                    <p className="text-lg font-semibold neuro-text-primary mb-2">No WOOP plan generated yet</p>
+                    <p className="text-sm">
+                      Click &ldquo;Generate WOOP Report&rdquo; to run the Azure OpenAI workflow and populate your personalized business plan.
+                    </p>
+                  </div>
+                )
+              )}
 
-              <div className="text-center neuro-inset p-6 rounded-neuro-lg">
-                <button
-                  onClick={() => completeStep('business-plan-creation', 'ai-mentor-program')}
-                  className="neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg hover:scale-105 transition-all duration-300"
-                >
-                  <FileText className="w-6 h-6 mr-3" />
-                  <span>Create Business Plan</span>
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </button>
-              </div>
+              {hasWoopReport && (
+                <div className="text-center neuro-inset p-6 rounded-neuro-lg mt-8">
+                  <button
+                    onClick={() => completeStep('business-plan-creation', 'ai-mentor-program')}
+                    className="neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg hover:scale-105 transition-all duration-300"
+                  >
+                    <FileText className="w-6 h-6 mr-3" />
+                    <span>Mark WOOP Plan as Complete</span>
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         );
+      }
 
       case 'ai-mentor-program':
         return (
