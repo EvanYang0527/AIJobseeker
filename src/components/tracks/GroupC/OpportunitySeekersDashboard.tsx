@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
@@ -32,6 +32,13 @@ import {
   ArrowLeft
 } from 'lucide-react';
 
+type GoalSettingForm = {
+  businessIdea: string;
+  timeCommitment: string;
+  careerGoals: string;
+  skillsToImprove: string;
+};
+
 const opportunitySeekersSteps: ProgressStep[] = [
   { id: 'skillcraft-wage-employment', label: 'Skillcraft Wage Employment Tasks', completed: false, current: true },
   { id: 'goal-setting', label: 'Goal Setting', completed: false, current: false },
@@ -46,12 +53,60 @@ export const OpportunitySeekersDashboard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState('skillcraft-wage-employment');
   const [assessmentStarted, setAssessmentStarted] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [goalSettingData, setGoalSettingData] = useState({
-    businessIdea: '',
-    timeCommitment: '',
-    careerGoals: '',
-    skillsToImprove: ''
-  });
+  const [goalSettingData, setGoalSettingData] = useState<GoalSettingForm>(() => ({
+    businessIdea: user?.profile?.goalSettingData?.businessIdea || user?.profile?.businessIdea || '',
+    timeCommitment: user?.profile?.goalSettingData?.timeCommitment || user?.profile?.timeCommitment || '',
+    careerGoals: user?.profile?.goalSettingData?.careerGoals || user?.profile?.careerGoals || '',
+    skillsToImprove: user?.profile?.goalSettingData?.skillsToImprove || user?.profile?.skillsToImprove || ''
+  }));
+
+  useEffect(() => {
+    const stored: GoalSettingForm = {
+      businessIdea: user?.profile?.goalSettingData?.businessIdea || user?.profile?.businessIdea || '',
+      timeCommitment: user?.profile?.goalSettingData?.timeCommitment || user?.profile?.timeCommitment || '',
+      careerGoals: user?.profile?.goalSettingData?.careerGoals || user?.profile?.careerGoals || '',
+      skillsToImprove: user?.profile?.goalSettingData?.skillsToImprove || user?.profile?.skillsToImprove || ''
+    };
+
+    setGoalSettingData(prev =>
+      prev.businessIdea === stored.businessIdea &&
+      prev.timeCommitment === stored.timeCommitment &&
+      prev.careerGoals === stored.careerGoals &&
+      prev.skillsToImprove === stored.skillsToImprove
+        ? prev
+        : stored
+    );
+  }, [
+    user?.profile?.goalSettingData?.businessIdea,
+    user?.profile?.goalSettingData?.timeCommitment,
+    user?.profile?.goalSettingData?.careerGoals,
+    user?.profile?.goalSettingData?.skillsToImprove,
+    user?.profile?.businessIdea,
+    user?.profile?.timeCommitment,
+    user?.profile?.careerGoals,
+    user?.profile?.skillsToImprove
+  ]);
+
+  const persistGoalSettingData = (updated: GoalSettingForm) => {
+    updateUser({
+      profile: {
+        ...user?.profile,
+        goalSettingData: updated,
+        businessIdea: updated.businessIdea,
+        timeCommitment: updated.timeCommitment,
+        careerGoals: updated.careerGoals,
+        skillsToImprove: updated.skillsToImprove
+      }
+    });
+  };
+
+  const handleGoalSettingChange = (field: keyof GoalSettingForm, value: string) => {
+    setGoalSettingData(prev => {
+      const updated = { ...prev, [field]: value } as GoalSettingForm;
+      persistGoalSettingData(updated);
+      return updated;
+    });
+  };
 
   const handleStepClick = (stepId: string) => {
     const completedSteps = user?.progress?.completedSteps || [];
@@ -94,12 +149,7 @@ export const OpportunitySeekersDashboard: React.FC = () => {
 
   const handleGoalSettingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser({
-      profile: {
-        ...user?.profile,
-        goalSettingData
-      }
-    });
+    persistGoalSettingData(goalSettingData);
     completeStep('goal-setting', 'ai-training-plan');
   };
 
@@ -297,7 +347,7 @@ export const OpportunitySeekersDashboard: React.FC = () => {
                   </label>
                   <textarea
                     value={goalSettingData.businessIdea}
-                    onChange={(e) => setGoalSettingData(prev => ({ ...prev, businessIdea: e.target.value }))}
+                    onChange={e => handleGoalSettingChange('businessIdea', e.target.value)}
                     rows={3}
                     className="neuro-input resize-none text-lg"
                     placeholder="Describe your ideal career direction or business idea..."
@@ -311,7 +361,7 @@ export const OpportunitySeekersDashboard: React.FC = () => {
                   </label>
                   <select
                     value={goalSettingData.timeCommitment}
-                    onChange={(e) => setGoalSettingData(prev => ({ ...prev, timeCommitment: e.target.value }))}
+                    onChange={e => handleGoalSettingChange('timeCommitment', e.target.value)}
                     className="neuro-select text-lg"
                     required
                   >
@@ -329,7 +379,7 @@ export const OpportunitySeekersDashboard: React.FC = () => {
                   </label>
                   <textarea
                     value={goalSettingData.careerGoals}
-                    onChange={(e) => setGoalSettingData(prev => ({ ...prev, careerGoals: e.target.value }))}
+                    onChange={e => handleGoalSettingChange('careerGoals', e.target.value)}
                     rows={3}
                     className="neuro-input resize-none text-lg"
                     placeholder="What are your specific career transition goals?"
@@ -343,7 +393,7 @@ export const OpportunitySeekersDashboard: React.FC = () => {
                   </label>
                   <textarea
                     value={goalSettingData.skillsToImprove}
-                    onChange={(e) => setGoalSettingData(prev => ({ ...prev, skillsToImprove: e.target.value }))}
+                    onChange={e => handleGoalSettingChange('skillsToImprove', e.target.value)}
                     rows={3}
                     className="neuro-input resize-none text-lg"
                     placeholder="What skills would you like to develop or improve?"
