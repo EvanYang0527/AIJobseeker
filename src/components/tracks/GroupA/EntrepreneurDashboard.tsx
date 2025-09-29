@@ -58,11 +58,90 @@ const formatPromptValue = (value: unknown): string => {
     return value.toString();
   }
 
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.join(', ') : 'Not provided by the user.';
+  }
+
   try {
+    const asObject = value as Record<string, unknown>;
+    if (asObject && Object.keys(asObject).length === 0) {
+      return 'Not provided by the user.';
+    }
+
     return JSON.stringify(value, null, 2);
   } catch (error) {
     console.error('Failed to stringify prompt value', error, value);
     return String(value);
+  }
+};
+
+const getFirstFilledValue = (...values: unknown[]) => {
+  for (const value of values) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    if (typeof value === 'string' && value.trim().length === 0) {
+      continue;
+    }
+
+    if (Array.isArray(value) && value.length === 0) {
+      continue;
+    }
+
+    if (typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+      if (Object.keys(record).length === 0) {
+        continue;
+      }
+    }
+
+    return value;
+  }
+
+  return null;
+};
+
+const assessmentOptionLabels: Record<string, Record<string, string>> = {
+  career_goal: {
+    start_business: 'Start my own business or become an entrepreneur',
+    find_job: 'Find a good job with a stable company',
+    advance_career: 'Advance in my current career path',
+    executive_role: 'Transition to senior executive or leadership role'
+  },
+  experience_level: {
+    new_graduate: 'Recent graduate or new to the workforce',
+    some_experience: '1-3 years of professional experience',
+    experienced: '4-10 years of professional experience',
+    senior_professional: '10+ years with leadership experience'
+  },
+  risk_tolerance: {
+    risk_averse: 'I prefer stability and predictable outcomes',
+    moderate_risk: "I'm comfortable with some calculated risks",
+    high_risk: 'I thrive on high-risk, high-reward opportunities',
+    very_high_risk: 'I love uncertainty and creating something from nothing'
+  },
+  leadership_style: {
+    team_player: 'I prefer working as part of a team with clear guidance',
+    independent_contributor: 'I work best independently with minimal supervision',
+    team_leader: 'I enjoy leading teams and managing projects',
+    visionary_leader: 'I love creating vision and building organizations from scratch'
+  },
+  industry_interest: {
+    established_company: 'Established company with clear processes and benefits',
+    growing_company: 'Growing company where I can advance quickly',
+    startup_environment: 'Fast-paced startup or innovative company',
+    own_venture: 'My own business where I control everything'
+  },
+  financial_goals: {
+    stable_income: 'Steady, predictable income with good benefits',
+    growing_salary: 'Gradually increasing salary with career progression',
+    high_compensation: 'High compensation commensurate with expertise',
+    unlimited_potential: 'Unlimited earning potential, willing to sacrifice short-term'
   }
 };
 
@@ -92,8 +171,80 @@ const buildWoopIntakePrompt = (user: User | null) => {
     getRecordFromProfile('assessmentQuestionnaire') ||
     getRecordFromProfile('assessmentAnswers');
 
-  const goalSettingData = getRecordFromProfile('goalSettingData');
-  const wageQuestionnaire = getRecordFromProfile('wageEmploymentQuestionnaire');
+  type GoalSettingRecord = {
+    businessIdea?: unknown;
+    businessCategory?: unknown;
+    experienceYears?: unknown;
+    timeCommitment?: unknown;
+    careerGoals?: unknown;
+    skillsToImprove?: unknown;
+  };
+
+  type WageQuestionnaireRecord = {
+    workExperience?: unknown;
+  };
+
+  type PriorExperienceRecord = {
+    workExperience?: unknown;
+    educationLevel?: unknown;
+    careerGoals?: unknown;
+    skillsConfidence?: unknown;
+    learningStyle?: unknown;
+    timeAvailable?: unknown;
+  };
+
+  const goalSettingData = getRecordFromProfile('goalSettingData') as GoalSettingRecord | undefined;
+  const wageQuestionnaire = getRecordFromProfile('wageEmploymentQuestionnaire') as
+    | WageQuestionnaireRecord
+    | undefined;
+  const priorExperience = getRecordFromProfile('priorExperience') as PriorExperienceRecord | undefined;
+
+  const businessIdeaValue = getFirstFilledValue(
+    profile.businessIdea,
+    goalSettingData?.businessIdea,
+    extendedProfile?.businessIdea,
+    priorExperience?.careerGoals
+  );
+
+  const businessCategoryValue = getFirstFilledValue(
+    profile.businessCategory,
+    extendedProfile?.businessCategory,
+    goalSettingData?.businessCategory
+  );
+
+  const experienceYearsValue = getFirstFilledValue(
+    profile.experienceYears,
+    goalSettingData?.experienceYears,
+    extendedProfile?.experienceYears
+  );
+
+  const timeCommitmentValue = getFirstFilledValue(
+    profile.timeCommitment,
+    goalSettingData?.timeCommitment,
+    extendedProfile?.timeCommitment
+  );
+
+  const careerGoalsValue = getFirstFilledValue(
+    extendedProfile?.careerGoals,
+    goalSettingData?.careerGoals,
+    priorExperience?.careerGoals
+  );
+
+  const skillsToImproveValue = getFirstFilledValue(
+    extendedProfile?.skillsToImprove,
+    goalSettingData?.skillsToImprove,
+    priorExperience?.skillsConfidence
+  );
+
+  const careerLevelValue = getFirstFilledValue(
+    extendedProfile?.careerLevel,
+    priorExperience?.educationLevel
+  );
+
+  const hasWorkExperienceValue = getFirstFilledValue(
+    extendedProfile?.hasWorkExperience,
+    priorExperience?.workExperience ? 'Yes - ' + priorExperience.workExperience : null
+  );
 
   const goalSettingLinesSections: string[] = [
     'USER OVERVIEW',
@@ -104,23 +255,25 @@ const buildWoopIntakePrompt = (user: User | null) => {
     `Selected track: ${formatPromptValue(user?.selectedTrack)}`,
     '',
     'GOAL SETTING RESPONSES',
-    `Business idea summary: ${formatPromptValue(profile.businessIdea)}`,
-    `Business category: ${formatPromptValue(profile.businessCategory)}`,
-    `Relevant experience in years: ${formatPromptValue(
-      profile.experienceYears !== undefined ? profile.experienceYears : null,
-    )}`,
-    `Preferred time commitment: ${formatPromptValue(profile.timeCommitment)}`,
-    `Career goals: ${formatPromptValue(extendedProfile?.careerGoals ?? goalSettingData?.careerGoals)}`,
-    `Skills to improve: ${formatPromptValue(extendedProfile?.skillsToImprove ?? goalSettingData?.skillsToImprove)}`,
-    `Career level: ${formatPromptValue(extendedProfile?.careerLevel)}`,
-    `Has work experience: ${formatPromptValue(extendedProfile?.hasWorkExperience)}`,
+    `Business idea summary: ${formatPromptValue(businessIdeaValue)}`,
+    `Business category: ${formatPromptValue(businessCategoryValue)}`,
+    `Relevant experience in years: ${formatPromptValue(experienceYearsValue)}`,
+    `Preferred time commitment: ${formatPromptValue(timeCommitmentValue)}`,
+    `Career goals: ${formatPromptValue(careerGoalsValue)}`,
+    `Skills to improve: ${formatPromptValue(skillsToImproveValue)}`,
+    `Career level: ${formatPromptValue(careerLevelValue)}`,
+    `Has work experience: ${formatPromptValue(hasWorkExperienceValue)}`,
     '',
     'ASSESSMENT QUESTIONNAIRE RESPONSES',
   ];
 
-  if (assessmentResponses) {
+  if (assessmentResponses && Object.keys(assessmentResponses).length > 0) {
     Object.entries(assessmentResponses).forEach(([key, value]) => {
-      goalSettingLinesSections.push(`${toReadableLabel(key)}: ${formatPromptValue(value)}`);
+      const valueLabel =
+        typeof value === 'string'
+          ? assessmentOptionLabels[key]?.[value] ?? value
+          : value;
+      goalSettingLinesSections.push(`${toReadableLabel(key)}: ${formatPromptValue(valueLabel)}`);
     });
   } else {
     goalSettingLinesSections.push('Assessment questionnaire responses: Not provided by the user.');
@@ -142,6 +295,19 @@ const buildWoopIntakePrompt = (user: User | null) => {
       '',
       'WAGE EMPLOYMENT QUESTIONNAIRE',
       `Work experience summary: ${formatPromptValue(wageQuestionnaire.workExperience)}`
+    );
+  }
+
+  if (priorExperience) {
+    goalSettingLinesSections.push(
+      '',
+      'PRIOR EXPERIENCE SNAPSHOT',
+      `Work experience: ${formatPromptValue(priorExperience.workExperience)}`,
+      `Education level: ${formatPromptValue(priorExperience.educationLevel)}`,
+      `Career goals: ${formatPromptValue(priorExperience.careerGoals)}`,
+      `Skills confidence: ${formatPromptValue(priorExperience.skillsConfidence)}`,
+      `Preferred learning style: ${formatPromptValue(priorExperience.learningStyle)}`,
+      `Time available: ${formatPromptValue(priorExperience.timeAvailable)}`
     );
   }
 
