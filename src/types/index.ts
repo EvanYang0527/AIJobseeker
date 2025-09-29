@@ -16,9 +16,34 @@ export interface User {
     businessCategory?: string;
     experienceYears?: number;
     timeCommitment?: string;
+    careerGoals?: string;
+    skillsToImprove?: string;
     skillcraftResults?: any;
     careerLevel?: 'entry' | 'mid' | 'advanced';
     hasWorkExperience?: boolean;
+    goalSettingData?: {
+      businessIdea?: string;
+      timeCommitment?: string;
+      careerGoals?: string;
+      skillsToImprove?: string;
+    };
+    assessmentResponses?: Record<string, string>;
+    assessmentRecommendation?: {
+      track: string;
+      confidence: number;
+    };
+    assessmentQuestionnaire?: Record<string, string>;
+    priorExperience?: {
+      workExperience?: string;
+      educationLevel?: string;
+      careerGoals?: string;
+      skillsConfidence?: string;
+      learningStyle?: string;
+      timeAvailable?: string;
+    };
+    wageEmploymentQuestionnaire?: {
+      workExperience?: string;
+    };
   };
 }
 

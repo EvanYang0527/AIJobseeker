@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
@@ -26,6 +26,15 @@ import {
   ArrowLeft
 } from 'lucide-react';
 
+type PathfinderQuestionnaire = {
+  workExperience: string;
+  educationLevel: string;
+  careerGoals: string;
+  skillsConfidence: string;
+  learningStyle: string;
+  timeAvailable: string;
+};
+
 const pathfinderSteps: ProgressStep[] = [
   { id: 'skillcraft-riasec', label: 'SkillCraft RIASEC', completed: false, current: true },
   { id: 'assessment-questionnaire', label: 'Assessment Questionnaire', completed: false, current: false },
@@ -38,14 +47,103 @@ export const PathfinderDashboard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState('skillcraft-riasec');
   const [assessmentStarted, setAssessmentStarted] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [questionnaireData, setQuestionnaireData] = useState({
-    workExperience: '',
-    educationLevel: '',
-    careerGoals: '',
-    skillsConfidence: '',
-    learningStyle: '',
-    timeAvailable: ''
-  });
+  const [questionnaireData, setQuestionnaireData] = useState<PathfinderQuestionnaire>(() => ({
+    workExperience:
+      (user?.profile?.assessmentQuestionnaire?.workExperience as string) ||
+      (user?.profile?.priorExperience?.workExperience as string) ||
+      '',
+    educationLevel:
+      (user?.profile?.assessmentQuestionnaire?.educationLevel as string) ||
+      (user?.profile?.priorExperience?.educationLevel as string) ||
+      '',
+    careerGoals:
+      (user?.profile?.assessmentQuestionnaire?.careerGoals as string) ||
+      (user?.profile?.priorExperience?.careerGoals as string) ||
+      '',
+    skillsConfidence:
+      (user?.profile?.assessmentQuestionnaire?.skillsConfidence as string) ||
+      (user?.profile?.priorExperience?.skillsConfidence as string) ||
+      '',
+    learningStyle:
+      (user?.profile?.assessmentQuestionnaire?.learningStyle as string) ||
+      (user?.profile?.priorExperience?.learningStyle as string) ||
+      '',
+    timeAvailable:
+      (user?.profile?.assessmentQuestionnaire?.timeAvailable as string) ||
+      (user?.profile?.priorExperience?.timeAvailable as string) ||
+      ''
+  }));
+
+  useEffect(() => {
+    const stored: PathfinderQuestionnaire = {
+      workExperience:
+        (user?.profile?.assessmentQuestionnaire?.workExperience as string) ||
+        (user?.profile?.priorExperience?.workExperience as string) ||
+        '',
+      educationLevel:
+        (user?.profile?.assessmentQuestionnaire?.educationLevel as string) ||
+        (user?.profile?.priorExperience?.educationLevel as string) ||
+        '',
+      careerGoals:
+        (user?.profile?.assessmentQuestionnaire?.careerGoals as string) ||
+        (user?.profile?.priorExperience?.careerGoals as string) ||
+        '',
+      skillsConfidence:
+        (user?.profile?.assessmentQuestionnaire?.skillsConfidence as string) ||
+        (user?.profile?.priorExperience?.skillsConfidence as string) ||
+        '',
+      learningStyle:
+        (user?.profile?.assessmentQuestionnaire?.learningStyle as string) ||
+        (user?.profile?.priorExperience?.learningStyle as string) ||
+        '',
+      timeAvailable:
+        (user?.profile?.assessmentQuestionnaire?.timeAvailable as string) ||
+        (user?.profile?.priorExperience?.timeAvailable as string) ||
+        ''
+    };
+
+    setQuestionnaireData(prev =>
+      prev.workExperience === stored.workExperience &&
+      prev.educationLevel === stored.educationLevel &&
+      prev.careerGoals === stored.careerGoals &&
+      prev.skillsConfidence === stored.skillsConfidence &&
+      prev.learningStyle === stored.learningStyle &&
+      prev.timeAvailable === stored.timeAvailable
+        ? prev
+        : stored
+    );
+  }, [
+    user?.profile?.assessmentQuestionnaire?.workExperience,
+    user?.profile?.assessmentQuestionnaire?.educationLevel,
+    user?.profile?.assessmentQuestionnaire?.careerGoals,
+    user?.profile?.assessmentQuestionnaire?.skillsConfidence,
+    user?.profile?.assessmentQuestionnaire?.learningStyle,
+    user?.profile?.assessmentQuestionnaire?.timeAvailable,
+    user?.profile?.priorExperience?.workExperience,
+    user?.profile?.priorExperience?.educationLevel,
+    user?.profile?.priorExperience?.careerGoals,
+    user?.profile?.priorExperience?.skillsConfidence,
+    user?.profile?.priorExperience?.learningStyle,
+    user?.profile?.priorExperience?.timeAvailable
+  ]);
+
+  const persistQuestionnaire = (nextData: PathfinderQuestionnaire) => {
+    updateUser({
+      profile: {
+        ...user?.profile,
+        assessmentQuestionnaire: nextData,
+        priorExperience: nextData
+      }
+    });
+  };
+
+  const handleQuestionnaireChange = (field: keyof PathfinderQuestionnaire, value: string) => {
+    setQuestionnaireData(prev => {
+      const updated = { ...prev, [field]: value } as PathfinderQuestionnaire;
+      persistQuestionnaire(updated);
+      return updated;
+    });
+  };
 
   const handleStepClick = (stepId: string) => {
     const completedSteps = user?.progress?.completedSteps || [];
@@ -84,12 +182,7 @@ export const PathfinderDashboard: React.FC = () => {
 
   const handleQuestionnaireSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser({
-      profile: {
-        ...user?.profile,
-        priorExperience: questionnaireData
-      }
-    });
+    persistQuestionnaire(questionnaireData);
     completeStep('assessment-questionnaire', 'career-guidance-chatbot');
   };
 
@@ -234,7 +327,7 @@ export const PathfinderDashboard: React.FC = () => {
                   </label>
                   <textarea
                     value={questionnaireData.workExperience}
-                    onChange={(e) => setQuestionnaireData(prev => ({ ...prev, workExperience: e.target.value }))}
+                    onChange={e => handleQuestionnaireChange('workExperience', e.target.value)}
                     rows={3}
                     className="neuro-input resize-none text-lg"
                     placeholder="Describe any work experience, internships, or volunteer work you've had..."
@@ -248,7 +341,7 @@ export const PathfinderDashboard: React.FC = () => {
                   </label>
                   <select
                     value={questionnaireData.educationLevel}
-                    onChange={(e) => setQuestionnaireData(prev => ({ ...prev, educationLevel: e.target.value }))}
+                    onChange={e => handleQuestionnaireChange('educationLevel', e.target.value)}
                     className="neuro-select text-lg"
                     required
                   >
@@ -268,7 +361,7 @@ export const PathfinderDashboard: React.FC = () => {
                   </label>
                   <textarea
                     value={questionnaireData.careerGoals}
-                    onChange={(e) => setQuestionnaireData(prev => ({ ...prev, careerGoals: e.target.value }))}
+                    onChange={e => handleQuestionnaireChange('careerGoals', e.target.value)}
                     rows={3}
                     className="neuro-input resize-none text-lg"
                     placeholder="What are your career aspirations and goals?"
@@ -282,7 +375,7 @@ export const PathfinderDashboard: React.FC = () => {
                   </label>
                   <select
                     value={questionnaireData.skillsConfidence}
-                    onChange={(e) => setQuestionnaireData(prev => ({ ...prev, skillsConfidence: e.target.value }))}
+                    onChange={e => handleQuestionnaireChange('skillsConfidence', e.target.value)}
                     className="neuro-select text-lg"
                     required
                   >
