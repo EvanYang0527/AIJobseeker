@@ -72,17 +72,63 @@ const buildWoopIntakePrompt = (user: User | null) => {
     ? formatPromptValue(profile.skillcraftResults)
     : 'No SkillCraft PDF text was provided by the user. Capture this gap under assumptions.';
 
-  const goalSettingLines = [
+  const toReadableLabel = (key: string) =>
+    key
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, char => char.toUpperCase());
+
+  const extendedProfile = (profile as unknown) as Record<string, unknown>;
+
+  const getRecordFromProfile = (key: string) => {
+    const value = extendedProfile?.[key];
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value as Record<string, unknown>;
+    }
+    return undefined;
+  };
+
+  const assessmentResponses =
+    getRecordFromProfile('assessmentResponses') ||
+    getRecordFromProfile('assessmentQuestionnaire') ||
+    getRecordFromProfile('assessmentAnswers');
+
+  const goalSettingLinesSections: string[] = [
+    'USER OVERVIEW',
+    `Full name: ${formatPromptValue(user?.fullName)}`,
+    `User location: ${formatPromptValue(user?.location)}`,
+    `Primary contact email: ${formatPromptValue(user?.email)}`,
+    `Phone number: ${formatPromptValue(user?.phoneNumber)}`,
+    `Selected track: ${formatPromptValue(user?.selectedTrack)}`,
+    '',
+    'GOAL SETTING RESPONSES',
     `Business idea summary: ${formatPromptValue(profile.businessIdea)}`,
     `Business category: ${formatPromptValue(profile.businessCategory)}`,
     `Relevant experience in years: ${formatPromptValue(
       profile.experienceYears !== undefined ? profile.experienceYears : null,
     )}`,
     `Preferred time commitment: ${formatPromptValue(profile.timeCommitment)}`,
-    `User location: ${formatPromptValue(user?.location)}`,
-    `Primary contact email: ${formatPromptValue(user?.email)}`,
-    `Phone number: ${formatPromptValue(user?.phoneNumber)}`,
-  ].join('\n');
+    `Career level: ${formatPromptValue(extendedProfile?.careerLevel)}`,
+    `Has work experience: ${formatPromptValue(extendedProfile?.hasWorkExperience)}`,
+    '',
+    'ASSESSMENT QUESTIONNAIRE RESPONSES',
+  ];
+
+  if (assessmentResponses) {
+    Object.entries(assessmentResponses).forEach(([key, value]) => {
+      goalSettingLinesSections.push(`${toReadableLabel(key)}: ${formatPromptValue(value)}`);
+    });
+  } else {
+    goalSettingLinesSections.push('Assessment questionnaire responses: Not provided by the user.');
+  }
+
+  goalSettingLinesSections.push(
+    '',
+    'PROGRESS SNAPSHOT',
+    `Current step index: ${formatPromptValue(user?.progress?.currentStep)}`,
+    `Completed steps: ${formatPromptValue(user?.progress?.completedSteps)}`,
+  );
+
+  const goalSettingLines = goalSettingLinesSections.join('\n');
 
   return `ROLE
 You are the Intake Summarizer for the Entrepreneur WOOP Plan Coach.
