@@ -661,9 +661,12 @@ export const EntrepreneurDashboard: React.FC = () => {
         return;
       }
 
-      const endpoint = import.meta.env.VITE_LEARNING_PLAN_ENDPOINT;
-      if (!endpoint) {
-        setLearningPlanError('Learning plan API endpoint is not configured.');
+      const ragflowBaseUrl = import.meta.env.VITE_RAGFLOW_BACKEND_URL;
+      const ragflowApiKey = import.meta.env.VITE_RAGFLOW_BACKEND_API_KEY;
+      const chatId = '697bf57c9a2111f0895b1a0199edd48c';
+
+      if (!ragflowBaseUrl || !ragflowApiKey) {
+        setLearningPlanError('Learning plan API configuration is missing.');
         return;
       }
 
@@ -671,12 +674,34 @@ export const EntrepreneurDashboard: React.FC = () => {
       setLearningPlanError(null);
 
       try {
+        const normalizedBaseUrl = ragflowBaseUrl.replace(/\/$/, '');
+        const endpoint = `${normalizedBaseUrl}/api/v1/chats_openai/${chatId}/chat/completions`;
+
+        const userStage = learningPlanContext.user_info.stage;
+        const userRegion = learningPlanContext.user_info.region ?? 'Maryland, USA';
+        const userBackground =
+          learningPlanContext.user_info.background ??
+          'High school education with prior experience cooking at family events and no formal business background';
+        const timeCommitmentHours = Math.max(learningPlanContext.time_commitment_hours_per_week, 0);
+
+        const prompt = `Find 15 relevant courses (title, provider, URL) to develop the following skill: ${learningPlanContext.skill}\n\nThe user is at the ${userStage} stage of starting a food pop-up business in ${userRegion}, with the following background: ${userBackground}. To achieve their goals, they need to develop broader business skills in Business Financial Management, Regulatory Compliance & Permits, and Small Business Marketing & Customer Acquisition. The user can commit approximately ${timeCommitmentHours} hours per week to focused learning and skill development.\nGenerate a structured learning plan for business skills, tailored to the user’s profile and weekly time commitment.\n\nRetrieve real courses (title, provider, URL, difficulty, estimated hours). Do NOT invent.\nRank courses by fit (difficulty × user stage × time commitment).\nBuild a sequenced plan (what to take first, next, etc.) and specify how many hours the user should spend on EACH course.\nAfter the plan, also return ALL 15 retrieved courses (even those not chosen), for transparency.\nReturn VALID JSON only using the schema below (no extra text).\n{ "skill": "string", "user_info": { "stage": "idea|MVP|early_revenue|scaling", "region": "string|null", "background": "string|null" }, "time_commitment_hours_per_week": 0, "learning_plan": { "plan_summary": "string", "weekly_hours": 0, "total_duration_weeks": 0, "sequence": [ { "order": 1, "course_title": "string", "provider_name": "string", "url": "string", "difficulty": "beginner|intermediate|advanced|null", "estimated_hours": 0, "planned_weekly_hours": 0, "expected_duration_weeks": 0, "why_chosen": "string" } ] }, "all_relevant_courses": [ { "course_title": "string", "provider_name": "string", "url": "string", "difficulty": "beginner|intermediate|advanced|null", "estimated_hours": 0 } ], "assumptions": ["string", "..."], "confidence": "high|medium|low" }`;
+
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${ragflowApiKey}`,
           },
-          body: JSON.stringify(learningPlanContext),
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            stream: false,
+          }),
         });
 
         if (!response.ok) {
@@ -684,8 +709,15 @@ export const EntrepreneurDashboard: React.FC = () => {
           throw new Error(`Learning plan request failed: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
-        const data = (await response.json()) as LearningPlanRecommendation;
-        setLearningPlan(data);
+        const data = await response.json();
+        const content = data?.choices?.[0]?.message?.content;
+
+        if (!content || typeof content !== 'string') {
+          throw new Error('Learning plan response did not include valid content.');
+        }
+
+        const parsed = JSON.parse(content) as LearningPlanRecommendation;
+        setLearningPlan(parsed);
       } catch (error) {
         if (error instanceof Error) {
           setLearningPlanError(error.message);
