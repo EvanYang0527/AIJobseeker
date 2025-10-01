@@ -14,6 +14,7 @@ import { OpportunitySeekersDashboard } from './components/tracks/GroupC/Opportun
 import { WorkforceReadyDashboard } from './components/tracks/GroupC/WorkforceReadyDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AssessmentQuestionnaire } from './components/assessment/AssessmentQuestionnaire';
+import { LearningCoursesRecommendationPage } from './components/learning/LearningCoursesRecommendationPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -98,6 +99,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/workforce-ready/dashboard" element={
         <PrivateRoute>
           <WorkforceReadyDashboard />
+        </PrivateRoute>
+      } />
+
+      <Route path="/learning/recommendations" element={
+        <PrivateRoute>
+          <LearningCoursesRecommendationPage />
         </PrivateRoute>
       } />
       
