@@ -147,9 +147,7 @@ const assessmentOptionLabels: Record<string, Record<string, string>> = {
 
 const buildWoopIntakePrompt = (user: User | null) => {
   const profile = user?.profile ?? {};
-  const skillcraftText = profile.skillcraftResults
-    ? formatPromptValue(profile.skillcraftResults)
-    : 'No SkillCraft PDF text was provided by the user. Capture this gap under assumptions.';
+  const skillcraftText = "Processing Speed (96.46): Very fast on timed connection tasks; Visual–Spatial (100.00): Top performance on short-term visual memory (longest Corsi span reached the benchmark);Problem Solving (77.78): Strong learning from feedback in the maze (most of the scored trials were correct);Attention (92.0): High sustained attention and target accuracy;Concentration (72.22): Good digit memory; backward span (harder) and forward span averaged to a solid score;Persistence (83.33): Stuck with the motor task for a substantial portion of time; good perseverance;Emotional Intelligence;Self-Awareness (83.33): Clear sense of one’s feelings and internal states;Self-Management (40.0): More variability with regulating emotions/impulses under pressure;Social Awareness (75.0): Strong capacity to read others and social cues;Extraversion (79.17): Tends toward outgoing/energetic;Agreeableness (70.83): Cooperative and considerate;Conscientiousness (66.67): Organized and goal-directed;Emotional Stability (62.5): Generally calm/resilient with some stress sensitivity;Openness (66.67): Curious and receptive to new ideas/experiences;Growth Mindset (56.25): Moderately growth-oriented beliefs (some room to strengthen “abilities can improve with effort”).";
 
   const toReadableLabel = (key: string) =>
     key

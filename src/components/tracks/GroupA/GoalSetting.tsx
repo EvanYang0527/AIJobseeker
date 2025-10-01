@@ -55,20 +55,20 @@ export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
         <div>
           <label className="block text-sm font-semibold neuro-text-primary mb-2">
-            Business Idea (150 words max)
+            Business Idea (1500 characters max)
           </label>
           <textarea
             name="businessIdea"
             value={formData.businessIdea}
             onChange={handleChange}
             rows={4}
-            maxLength={150}
+            maxLength={1500}
             className="neuro-input resize-none"
             placeholder="Describe your business idea, target market, and value proposition..."
             required
           />
           <div className="text-right text-sm neuro-text-muted mt-1">
-            {formData.businessIdea.length}/150 characters
+            {formData.businessIdea.length}/1500 characters
           </div>
         </div>
 
