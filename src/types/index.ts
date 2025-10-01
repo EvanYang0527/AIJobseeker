@@ -92,3 +92,5 @@ export interface AdminSettings {
     [key: string]: number;
   };
 }
+
+export * from './learningPlan';
