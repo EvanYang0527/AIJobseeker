@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
 import { GoalSetting } from './GoalSetting';
-import { ProgressStep, User } from '../../../types';
+import { LearningPlanRecommendation, ProgressStep, User, VentureStage } from '../../../types';
 import { WoopIntakeSummary, WoopWish, WoopOutcome, WoopObstacles, WoopPlan } from '../../../types/woop';
 import { AzureChatMessage, callAzureChatCompletion, parseAzureJSON } from '../../../utils/azureOpenAI';
 import { AssessmentResults } from '../../assessment/AssessmentResults';
@@ -10,9 +10,9 @@ import {
   Brain,
   Target,
   MessageCircle,
-  Award, 
-  ArrowRight, 
-  CheckCircle, 
+  Award,
+  ArrowRight,
+  CheckCircle,
   Star,
   Lightbulb,
   Users,
@@ -31,7 +31,11 @@ import {
   Download,
   ExternalLink,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  BookOpen,
+  Clock,
+  RefreshCw,
+  Compass
 } from 'lucide-react';
 
 const entrepreneurSteps: ProgressStep[] = [
@@ -39,6 +43,7 @@ const entrepreneurSteps: ProgressStep[] = [
   { id: 'assessment-questionnaire', label: 'Assessment Questionnaire', completed: false, current: false },
   { id: 'goal-setting', label: 'Goal Setting', completed: false, current: false },
   { id: 'business-plan-creation', label: 'Business Plan Creation', completed: false, current: false },
+  { id: 'learning-plan-recommendations', label: 'Learning Course Recommendations', completed: false, current: false },
   { id: 'ai-mentor-program', label: 'AI Mentor Program', completed: false, current: false },
   { id: 'networking-funding', label: 'Networking and Funding Resources', completed: false, current: false },
   { id: 'skills-passport-certificate', label: 'Skills Passport Certificate', completed: false, current: false }
@@ -143,6 +148,42 @@ const assessmentOptionLabels: Record<string, Record<string, string>> = {
     high_compensation: 'High compensation commensurate with expertise',
     unlimited_potential: 'Unlimited earning potential, willing to sacrifice short-term'
   }
+};
+
+const normalizeVentureStage = (stage: string | null | undefined): VentureStage => {
+  switch (stage) {
+    case 'MVP':
+    case 'early_revenue':
+    case 'scaling':
+      return stage;
+    default:
+      return 'idea';
+  }
+};
+
+const parseNumericTimeCommitment = (value?: string | null): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const match = value.match(/\d+/);
+  if (!match) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(match[0], 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const formatDifficultyLabel = (difficulty: string | null | undefined) => {
+  if (!difficulty) {
+    return 'All levels';
+  }
+
+  return difficulty
+    .split('_')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 };
 
 const buildWoopIntakePrompt = (user: User | null) => {
@@ -535,6 +576,138 @@ export const EntrepreneurDashboard: React.FC = () => {
   const [woopPlan, setWoopPlan] = useState<WoopPlan | null>(null);
   const [woopLoading, setWoopLoading] = useState(false);
   const [woopError, setWoopError] = useState<string | null>(null);
+  const [learningPlan, setLearningPlan] = useState<LearningPlanRecommendation | null>(null);
+  const [learningPlanLoading, setLearningPlanLoading] = useState(false);
+  const [learningPlanError, setLearningPlanError] = useState<string | null>(null);
+
+  const ventureStage = normalizeVentureStage(woopSummary?.user_profile.stage);
+
+  const preferredSkill = useMemo(() => {
+    const learningTopics = woopSummary?.derived_insights?.learning_topics ?? [];
+    if (learningTopics.length > 0) {
+      return learningTopics[0];
+    }
+
+    const normalizedSkills = woopSummary?.normalizations?.skills_taxonomy ?? [];
+    if (normalizedSkills.length > 0) {
+      return normalizedSkills[0].normalized || normalizedSkills[0].raw;
+    }
+
+    const topSkills = woopSummary?.skillcraft_summary?.top_skills ?? [];
+    if (topSkills.length > 0) {
+      return topSkills[0].name;
+    }
+
+    if (user?.profile?.skillsToImprove) {
+      const [firstSkill] = user.profile.skillsToImprove.split(',');
+      if (firstSkill) {
+        return firstSkill.trim();
+      }
+    }
+
+    return 'Entrepreneurship Fundamentals';
+  }, [user, woopSummary]);
+
+  const backgroundSummary = useMemo(() => {
+    return (
+      user?.profile?.priorExperience?.workExperience ||
+      user?.profile?.businessIdea ||
+      user?.profile?.careerGoals ||
+      woopSummary?.summary ||
+      null
+    );
+  }, [user, woopSummary]);
+
+  const region = useMemo(() => {
+    if (woopSummary?.user_profile.region) {
+      return woopSummary.user_profile.region;
+    }
+    if (user?.location) {
+      return user.location;
+    }
+    return null;
+  }, [user, woopSummary]);
+
+  const timeCommitment = useMemo(() => {
+    const fromWoop = woopSummary?.goal_setting.time_commitment_hours_per_week;
+    if (typeof fromWoop === 'number') {
+      return fromWoop;
+    }
+
+    const parsed = parseNumericTimeCommitment(user?.profile?.timeCommitment);
+    return parsed ?? 0;
+  }, [user, woopSummary]);
+
+  const learningPlanContext = useMemo(
+    () => ({
+      skill: preferredSkill,
+      user_info: {
+        stage: ventureStage,
+        region,
+        background: backgroundSummary,
+      },
+      time_commitment_hours_per_week: timeCommitment,
+    }),
+    [preferredSkill, ventureStage, region, backgroundSummary, timeCommitment],
+  );
+
+  const fetchLearningPlan = useCallback(
+    async (force = false) => {
+      if (learningPlanLoading) {
+        return;
+      }
+
+      if (learningPlan && !force) {
+        return;
+      }
+
+      const endpoint = import.meta.env.VITE_LEARNING_PLAN_ENDPOINT;
+      if (!endpoint) {
+        setLearningPlanError('Learning plan API endpoint is not configured.');
+        return;
+      }
+
+      setLearningPlanLoading(true);
+      setLearningPlanError(null);
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(learningPlanContext),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Learning plan request failed: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        const data = (await response.json()) as LearningPlanRecommendation;
+        setLearningPlan(data);
+      } catch (error) {
+        if (error instanceof Error) {
+          setLearningPlanError(error.message);
+        } else {
+          setLearningPlanError('An unknown error occurred while fetching the learning plan.');
+        }
+      } finally {
+        setLearningPlanLoading(false);
+      }
+    },
+    [learningPlan, learningPlanContext, learningPlanLoading],
+  );
+
+  useEffect(() => {
+    if (currentStep === 'learning-plan-recommendations') {
+      void fetchLearningPlan();
+    }
+  }, [currentStep, fetchLearningPlan]);
+
+  useEffect(() => {
+    setLearningPlan(null);
+  }, [learningPlanContext]);
 
   const handleStepClick = (stepId: string) => {
     const completedSteps = user?.progress?.completedSteps || [];
@@ -1484,7 +1657,7 @@ export const EntrepreneurDashboard: React.FC = () => {
               {hasWoopReport && (
                 <div className="text-center neuro-inset p-6 rounded-neuro-lg mt-8">
                   <button
-                    onClick={() => completeStep('business-plan-creation', 'ai-mentor-program')}
+                    onClick={() => completeStep('business-plan-creation', 'learning-plan-recommendations')}
                     className="neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg hover:scale-105 transition-all duration-300"
                   >
                     <FileText className="w-6 h-6 mr-3" />
@@ -1493,6 +1666,318 @@ export const EntrepreneurDashboard: React.FC = () => {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        );
+      }
+
+      case 'learning-plan-recommendations': {
+        const activePlan = learningPlan;
+        const stageDisplay = activePlan?.user_info.stage ?? learningPlanContext.user_info.stage;
+        const regionDisplay = activePlan?.user_info.region ?? learningPlanContext.user_info.region;
+        const backgroundDisplay = activePlan?.user_info.background ?? learningPlanContext.user_info.background;
+        const skillDisplay = activePlan?.skill ?? learningPlanContext.skill;
+        const weeklyHours = activePlan?.learning_plan.weekly_hours ?? Math.max(learningPlanContext.time_commitment_hours_per_week, 0);
+        const totalDuration = activePlan?.learning_plan.total_duration_weeks ?? null;
+        const planSummary = activePlan?.learning_plan.plan_summary ??
+          'We will request your personalized learning journey once the recommendation service is available.';
+        const sequence = activePlan?.learning_plan.sequence ?? [];
+        const courses = activePlan?.all_relevant_courses ?? [];
+        const assumptions = activePlan?.assumptions ?? [];
+        const confidence = activePlan?.confidence ?? null;
+        const confidenceConfig = {
+          high: { label: 'High confidence', gradient: 'from-neuro-success to-green-400' },
+          medium: { label: 'Medium confidence', gradient: 'from-neuro-warning to-yellow-400' },
+          low: { label: 'Developing confidence', gradient: 'from-neuro-error to-red-400' }
+        } as const;
+        const confidenceDisplay = confidence
+          ? confidenceConfig[confidence]
+          : { label: 'Confidence pending', gradient: 'from-neuro-secondary to-pink-400' };
+
+        return (
+          <div className="p-8 bg-neuro-bg">
+            <div className="neuro-card hover:shadow-neuro-hover transition-all duration-300">
+              <div className="text-center mb-8">
+                <div className="w-24 h-24 neuro-icon mx-auto mb-6 bg-gradient-to-br from-neuro-secondary to-pink-400 neuro-animate-float">
+                  <BookOpen className="w-12 h-12 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold neuro-text-primary mb-4">Personalized Learning Path</h2>
+                <p className="text-lg neuro-text-secondary max-w-2xl mx-auto">
+                  Curated course recommendations aligned with your venture stage, available time, and top skill gaps.
+                </p>
+              </div>
+
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                <div>
+                  <h3 className="text-xl font-semibold neuro-text-primary">Learning focus: {skillDisplay}</h3>
+                  <p className="text-sm md:text-base neuro-text-secondary">
+                    Updated automatically using the latest insights from your WOOP plan and SkillCraft results.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 justify-end">
+                  <button
+                    onClick={() => fetchLearningPlan(true)}
+                    disabled={learningPlanLoading}
+                    className={`neuro-surface inline-flex items-center px-6 py-3 rounded-neuro-lg text-sm font-semibold transition-all duration-300 ${
+                      learningPlanLoading ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-neuro-hover hover:scale-105'
+                    }`}
+                  >
+                    {learningPlanLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh plan
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {learningPlanLoading && !learningPlan ? (
+                <div className="neuro-inset p-8 rounded-neuro text-center text-neuro-secondary">
+                  <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin" />
+                  <p className="text-lg font-semibold neuro-text-primary">Gathering your personalized learning path...</p>
+                  <p className="text-sm">This may take a few moments while we analyze your latest goals and availability.</p>
+                </div>
+              ) : learningPlanError ? (
+                <div className="neuro-inset p-8 rounded-neuro text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <AlertCircle className="w-8 h-8 text-neuro-error" />
+                    <p className="text-lg font-semibold neuro-text-primary">Unable to load learning plan</p>
+                    <p className="text-sm neuro-text-secondary max-w-lg">{learningPlanError}</p>
+                    <button
+                      onClick={() => fetchLearningPlan(true)}
+                      className="neuro-button-primary inline-flex items-center px-6 py-3 rounded-neuro-lg text-sm font-semibold"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              ) : learningPlan ? (
+                <div className="space-y-8">
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="neuro-surface p-6 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <div className="flex items-center mb-4">
+                        <div className="w-14 h-14 neuro-icon bg-gradient-to-br from-neuro-secondary to-pink-400 mr-3">
+                          <BookOpen className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wider neuro-text-muted">Focus Skill</p>
+                          <p className="text-lg font-semibold neuro-text-primary">{skillDisplay}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm neuro-text-secondary">
+                        Courses selected to deepen your capability in this priority area.
+                      </p>
+                    </div>
+                    <div className="neuro-surface p-6 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <div className="flex items-center mb-4">
+                        <div className="w-14 h-14 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light mr-3">
+                          <Compass className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wider neuro-text-muted">Venture Stage</p>
+                          <p className="text-lg font-semibold neuro-text-primary capitalize">{stageDisplay.replace(/_/g, ' ')}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm neuro-text-secondary">
+                        {regionDisplay ? `Tailored for founders operating in ${regionDisplay}.` : 'Optimized for your current growth stage.'}
+                      </p>
+                    </div>
+                    <div className="neuro-surface p-6 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <div className="flex items-center mb-4">
+                        <div className="w-14 h-14 neuro-icon bg-gradient-to-br from-neuro-warning to-yellow-400 mr-3">
+                          <Clock className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wider neuro-text-muted">Weekly Focus</p>
+                          <p className="text-lg font-semibold neuro-text-primary">{weeklyHours} hrs/week</p>
+                        </div>
+                      </div>
+                      <p className="text-sm neuro-text-secondary">
+                        {totalDuration
+                          ? `Structured for ${totalDuration} weeks of progress.`
+                          : 'Designed around your available time commitment.'}
+                      </p>
+                    </div>
+                    <div className="neuro-surface p-6 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <div className="flex items-center mb-4">
+                        <div className="w-14 h-14 neuro-icon bg-gradient-to-br from-neuro-success to-green-400 mr-3">
+                          <Briefcase className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wider neuro-text-muted">Founder Background</p>
+                          <p className="text-lg font-semibold neuro-text-primary">
+                            {backgroundDisplay ? backgroundDisplay : 'Not specified'}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm neuro-text-secondary">
+                        Baseline context used to personalize each recommendation.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                    <h3 className="text-2xl font-bold neuro-text-primary mb-4">Learning plan overview</h3>
+                    <p className="neuro-text-secondary leading-relaxed">{planSummary}</p>
+                  </div>
+
+                  <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                    <div className="flex items-center mb-6">
+                      <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light mr-4">
+                        <Target className="w-8 h-8 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold neuro-text-primary">Recommended sequence</h3>
+                        <p className="neuro-text-secondary">Follow these courses in order to build momentum week by week.</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      {sequence.length ? (
+                        sequence.map(item => (
+                          <div key={`${item.order}-${item.course_title}`} className="neuro-inset p-6 rounded-neuro">
+                            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                              <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 neuro-icon bg-gradient-to-br from-neuro-secondary to-pink-400 flex items-center justify-center text-white font-bold text-lg">
+                                  {item.order}
+                                </div>
+                                <div>
+                                  <h4 className="text-xl font-semibold neuro-text-primary mb-2">{item.course_title}</h4>
+                                  <p className="text-sm neuro-text-secondary mb-2">{item.provider_name}</p>
+                                  <p className="neuro-text-secondary text-sm leading-relaxed">{item.why_chosen}</p>
+                                  <div className="flex flex-wrap gap-3 mt-4 text-xs font-semibold uppercase tracking-wide">
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-neuro-bg text-neuro-secondary">
+                                      {formatDifficultyLabel(item.difficulty)}
+                                    </span>
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-neuro-bg text-neuro-secondary">
+                                      {item.estimated_hours} hrs total
+                                    </span>
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-neuro-bg text-neuro-secondary">
+                                      {item.planned_weekly_hours} hrs/week
+                                    </span>
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-neuro-bg text-neuro-secondary">
+                                      {item.expected_duration_weeks} weeks
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center lg:items-start gap-3">
+                                <a
+                                  href={item.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="neuro-button-primary inline-flex items-center px-4 py-2 rounded-neuro-lg text-sm"
+                                >
+                                  View course
+                                  <ExternalLink className="w-4 h-4 ml-2" />
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="neuro-inset p-6 rounded-neuro text-center text-sm neuro-text-secondary">
+                          No sequence available yet. Refresh the plan once recommendations are ready.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                      <h3 className="text-2xl font-bold neuro-text-primary mb-4">Additional course options</h3>
+                      <div className="space-y-4">
+                        {courses.length ? (
+                          courses.map(course => (
+                            <div key={`${course.course_title}-${course.provider_name}`} className="neuro-inset p-5 rounded-neuro">
+                              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                  <h4 className="font-semibold neuro-text-primary">{course.course_title}</h4>
+                                  <p className="text-sm neuro-text-secondary">{course.provider_name}</p>
+                                  <div className="flex flex-wrap gap-3 mt-3 text-xs font-semibold uppercase tracking-wide text-neuro-secondary">
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-neuro-bg">
+                                      {formatDifficultyLabel(course.difficulty)}
+                                    </span>
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-neuro-bg">
+                                      {course.estimated_hours} hrs
+                                    </span>
+                                  </div>
+                                </div>
+                                <a
+                                  href={course.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="neuro-surface inline-flex items-center px-4 py-2 rounded-neuro-lg text-sm hover:shadow-neuro-hover transition-all duration-300"
+                                >
+                                  Explore
+                                  <ExternalLink className="w-4 h-4 ml-2" />
+                                </a>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm neuro-text-secondary">
+                            No optional courses were returned. Refresh the plan to check for new opportunities.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-6">
+                      <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                        <h3 className="text-2xl font-bold neuro-text-primary mb-4">Planning assumptions</h3>
+                        <ul className="space-y-3">
+                          {assumptions.length ? (
+                            assumptions.map((assumption, index) => (
+                              <li key={`${index}-${assumption}`} className="flex items-start gap-3">
+                                <div className="w-6 h-6 neuro-icon bg-gradient-to-br from-neuro-secondary to-pink-400 flex items-center justify-center text-white text-xs font-bold mt-0.5">
+                                  <CheckCircle className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="neuro-text-secondary leading-relaxed">{assumption}</span>
+                              </li>
+                            ))
+                          ) : (
+                            <li className="text-sm neuro-text-secondary">No assumptions were provided.</li>
+                          )}
+                        </ul>
+                      </div>
+                      <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                        <h3 className="text-2xl font-bold neuro-text-primary mb-4">Recommendation confidence</h3>
+                        <div className={`neuro-inset p-6 rounded-neuro bg-gradient-to-br ${confidenceDisplay.gradient} text-white`}>
+                          <p className="text-lg font-semibold">{confidenceDisplay.label}</p>
+                          <p className="text-sm opacity-90 mt-2">
+                            Confidence is determined by the quality of data we have about your goals, stage, and skill gaps.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="neuro-inset p-8 rounded-neuro text-center text-sm neuro-text-secondary">
+                  Generate your WOOP plan first to unlock tailored learning recommendations.
+                </div>
+              )}
+
+              <div className="text-center neuro-inset p-6 rounded-neuro-lg mt-8">
+                <button
+                  onClick={() => completeStep('learning-plan-recommendations', 'ai-mentor-program')}
+                  disabled={learningPlanLoading || !learningPlan}
+                  className={`neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg transition-all duration-300 ${
+                    learningPlanLoading || !learningPlan ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'
+                  }`}
+                >
+                  <Sparkles className="w-5 h-5 mr-3" />
+                  <span>Continue to AI Mentor</span>
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </button>
+              </div>
             </div>
           </div>
         );
