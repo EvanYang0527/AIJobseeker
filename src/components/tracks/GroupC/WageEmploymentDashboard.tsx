@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
 import { ProgressStep } from '../../../types';
 import { AssessmentResults } from '../../assessment/AssessmentResults';
@@ -32,9 +33,32 @@ const wageEmploymentSteps: ProgressStep[] = [
 
 export const WageEmploymentDashboard: React.FC = () => {
   const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState('skillcraft-riasec');
   const [assessmentStarted, setAssessmentStarted] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [questionnaireResponse, setQuestionnaireResponse] = useState<string>(
+    () => (user?.profile?.wageEmploymentQuestionnaire?.workExperience as string) || ''
+  );
+
+  useEffect(() => {
+    const stored = (user?.profile?.wageEmploymentQuestionnaire?.workExperience as string) || '';
+    setQuestionnaireResponse(prev => (prev === stored ? prev : stored));
+  }, [user?.profile?.wageEmploymentQuestionnaire?.workExperience]);
+
+  const persistWageQuestionnaire = (workExperience: string) => {
+    updateUser({
+      profile: {
+        ...user?.profile,
+        wageEmploymentQuestionnaire: { workExperience }
+      }
+    });
+  };
+
+  const handleWageQuestionnaireChange = (value: string) => {
+    setQuestionnaireResponse(value);
+    persistWageQuestionnaire(value);
+  };
 
   const handleStepClick = (stepId: string) => {
     const completedSteps = user?.progress?.completedSteps || [];
@@ -220,6 +244,9 @@ export const WageEmploymentDashboard: React.FC = () => {
                     rows={3}
                     className="neuro-input resize-none text-lg"
                     placeholder="Describe your work experience and career background..."
+                    value={questionnaireResponse}
+                    onChange={e => handleWageQuestionnaireChange(e.target.value)}
+                    required
                   />
                 </div>
 

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle, ArrowRight, ArrowLeft, Target, Briefcase, TrendingUp, Award, HelpCircle, Star, Lightbulb } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Question {
   id: string;
@@ -201,13 +202,51 @@ const trackInfo = {
 };
 
 export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = ({ onComplete, onBack }) => {
+  const { user, updateUser } = useAuth();
+  const savedAnswers = useMemo(() => {
+    const existing = user?.profile?.assessmentResponses;
+    if (existing && typeof existing === 'object') {
+      return existing as Record<string, string>;
+    }
+    return {};
+  }, [user?.profile?.assessmentResponses]);
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(savedAnswers);
   const [showResults, setShowResults] = useState(false);
   const [recommendation, setRecommendation] = useState<{track: string; confidence: number} | null>(null);
 
+  useEffect(() => {
+    setAnswers(savedAnswers);
+    if (Object.keys(savedAnswers).length > 0) {
+      const firstIncompleteIndex = questions.findIndex(question => !savedAnswers[question.id]);
+      if (firstIncompleteIndex === -1) {
+        setCurrentQuestion(questions.length - 1);
+      } else {
+        setCurrentQuestion(firstIncompleteIndex);
+      }
+    }
+  }, [savedAnswers]);
+
+  const persistAssessmentData = (nextAnswers: Record<string, string>, track?: string, confidence?: number) => {
+    updateUser({
+      profile: {
+        ...user?.profile,
+        assessmentResponses: nextAnswers,
+        assessmentRecommendation:
+          track && typeof confidence === 'number'
+            ? { track, confidence }
+            : user?.profile?.assessmentRecommendation
+      }
+    });
+  };
+
   const handleAnswer = (questionId: string, optionId: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: optionId }));
+    setAnswers(prev => {
+      const updatedAnswers = { ...prev, [questionId]: optionId };
+      persistAssessmentData(updatedAnswers);
+      return updatedAnswers;
+    });
   };
 
   const calculateRecommendation = () => {
@@ -244,6 +283,7 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
       setCurrentQuestion(currentQuestion + 1);
     } else {
       const result = calculateRecommendation();
+      persistAssessmentData(answers, result.track, result.confidence);
       setRecommendation(result);
       // Navigate to track recommendation page
       window.location.href = `/track-recommendation?track=${result.track}&confidence=${result.confidence}`;
@@ -259,7 +299,9 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
   const handleCompleteAssessment = (selectedTrack?: string) => {
     const finalTrack = selectedTrack || recommendation?.track || 'wage-employment';
     const finalConfidence = recommendation?.confidence || 75;
-    
+
+    persistAssessmentData(answers, finalTrack, finalConfidence);
+
     // Navigate to track recommendation page with results
     window.location.href = `/track-recommendation?track=${finalTrack}&confidence=${finalConfidence}`;
   };
