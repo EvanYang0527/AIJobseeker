@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
 import { GoalSetting } from './GoalSetting';
@@ -28,7 +28,11 @@ import {
   Sparkles,
   Download,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  GraduationCap,
+  RefreshCcw,
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 
 const entrepreneurSteps: ProgressStep[] = [
@@ -36,10 +40,136 @@ const entrepreneurSteps: ProgressStep[] = [
   { id: 'assessment-questionnaire', label: 'Assessment Questionnaire', completed: false, current: false },
   { id: 'goal-setting', label: 'Goal Setting', completed: false, current: false },
   { id: 'business-plan-creation', label: 'Business Plan Creation', completed: false, current: false },
+  { id: 'learning-recommendations', label: 'AI Learning Recommendations', completed: false, current: false },
   { id: 'ai-mentor-program', label: 'AI Mentor Program', completed: false, current: false },
   { id: 'networking-funding', label: 'Networking and Funding Resources', completed: false, current: false },
   { id: 'skills-passport-certificate', label: 'Skills Passport Certificate', completed: false, current: false }
 ];
+
+type LearningStage = 'idea' | 'MVP' | 'early_revenue' | 'scaling';
+type LearningConfidence = 'high' | 'medium' | 'low';
+type LearningDifficulty = 'beginner' | 'intermediate' | 'advanced' | null;
+
+interface LearningRecommendationUserInfo {
+  stage: LearningStage;
+  region: string | null;
+  background: string | null;
+}
+
+interface LearningRecommendationCourse {
+  course_title: string;
+  provider_name: string;
+  url: string;
+  difficulty: LearningDifficulty;
+  estimated_hours: number;
+}
+
+interface LearningRecommendationSequenceItem extends LearningRecommendationCourse {
+  order: number;
+  planned_weekly_hours: number;
+  expected_duration_weeks: number;
+  why_chosen: string;
+}
+
+interface LearningRecommendationPlan {
+  plan_summary: string;
+  weekly_hours: number;
+  total_duration_weeks: number;
+  sequence: LearningRecommendationSequenceItem[];
+}
+
+interface LearningRecommendation {
+  skill: string;
+  user_info: LearningRecommendationUserInfo;
+  time_commitment_hours_per_week: number;
+  learning_plan: LearningRecommendationPlan;
+  all_relevant_courses: LearningRecommendationCourse[];
+  assumptions: string[];
+  confidence: LearningConfidence;
+}
+
+const fallbackLearningRecommendation: LearningRecommendation = {
+  skill: 'AI-Powered Venture Leadership',
+  user_info: {
+    stage: 'idea',
+    region: null,
+    background: null
+  },
+  time_commitment_hours_per_week: 6,
+  learning_plan: {
+    plan_summary:
+      'Establish a strong AI entrepreneurship foundation, validate your solution with early customers, and prepare for rapid scaling with strategic growth skills.',
+    weekly_hours: 6,
+    total_duration_weeks: 8,
+    sequence: [
+      {
+        order: 1,
+        course_title: 'Entrepreneurship in Emerging Technologies',
+        provider_name: 'Coursera (University of Maryland)',
+        url: 'https://www.coursera.org/learn/entrepreneurship-emerging-technologies',
+        difficulty: 'beginner',
+        estimated_hours: 12,
+        planned_weekly_hours: 4,
+        expected_duration_weeks: 3,
+        why_chosen:
+          'Builds essential knowledge to evaluate and position AI-driven products, helping you articulate value and stand out from competitors.'
+      },
+      {
+        order: 2,
+        course_title: 'Building Conversational AI Products with Generative Models',
+        provider_name: 'Udacity',
+        url: 'https://www.udacity.com/course/generative-ai-products',
+        difficulty: 'intermediate',
+        estimated_hours: 20,
+        planned_weekly_hours: 6,
+        expected_duration_weeks: 4,
+        why_chosen:
+          'Focuses on designing and shipping AI-first experiences, equipping you with implementation knowledge for your startup MVP.'
+      },
+      {
+        order: 3,
+        course_title: 'Go To Market Strategies for Tech Startups',
+        provider_name: 'LinkedIn Learning',
+        url: 'https://www.linkedin.com/learning/go-to-market-strategies',
+        difficulty: 'beginner',
+        estimated_hours: 6,
+        planned_weekly_hours: 4,
+        expected_duration_weeks: 2,
+        why_chosen:
+          'Provides a tactical framework to package your offer, validate with lighthouse customers, and close early revenue opportunities.'
+      }
+    ]
+  },
+  all_relevant_courses: [
+    {
+      course_title: 'AI Product Management Specialization',
+      provider_name: 'Coursera (Duke University)',
+      url: 'https://www.coursera.org/specializations/ai-product-management',
+      difficulty: 'intermediate',
+      estimated_hours: 25
+    },
+    {
+      course_title: 'Financial Modeling for Startups',
+      provider_name: 'Udemy',
+      url: 'https://www.udemy.com/course/startup-financial-modeling-and-fundraising',
+      difficulty: 'beginner',
+      estimated_hours: 5
+    },
+    {
+      course_title: 'Scaling AI Ventures',
+      provider_name: 'edX (MIT)',
+      url: 'https://www.edx.org/course/scaling-ai-ventures',
+      difficulty: 'advanced',
+      estimated_hours: 15
+    }
+  ],
+  assumptions: [
+    'You can dedicate 6 focused hours per week to structured learning.',
+    'You are preparing to launch an AI-enabled MVP within the next quarter.',
+    'You have foundational business knowledge and want to strengthen AI product execution capabilities.'
+  ],
+  confidence: 'medium'
+};
 
 export const EntrepreneurDashboard: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -59,6 +189,98 @@ export const EntrepreneurDashboard: React.FC = () => {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [learningRecommendation, setLearningRecommendation] = useState<LearningRecommendation | null>(null);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
+  const [recommendationError, setRecommendationError] = useState<string | null>(null);
+  const [usedFallbackPlan, setUsedFallbackPlan] = useState(false);
+
+  const getStageLabel = (stage: LearningStage) => {
+    switch (stage) {
+      case 'idea':
+        return 'Idea Stage';
+      case 'MVP':
+        return 'MVP Launch';
+      case 'early_revenue':
+        return 'Early Revenue';
+      case 'scaling':
+        return 'Scaling';
+      default:
+        return 'Idea Stage';
+    }
+  };
+
+  const formatDifficulty = (difficulty: LearningDifficulty) => {
+    if (!difficulty) {
+      return 'All Levels';
+    }
+    return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+  };
+
+  const getConfidenceConfig = (confidence: LearningConfidence) => {
+    switch (confidence) {
+      case 'high':
+        return { label: 'High Confidence', className: 'text-neuro-success', badgeClassName: 'bg-neuro-success/10 text-neuro-success' };
+      case 'medium':
+        return { label: 'Balanced Confidence', className: 'text-neuro-warning', badgeClassName: 'bg-neuro-warning/10 text-neuro-warning' };
+      case 'low':
+      default:
+        return { label: 'Emerging Confidence', className: 'text-neuro-error', badgeClassName: 'bg-neuro-error/10 text-neuro-error' };
+    }
+  };
+
+  const fetchLearningRecommendations = useCallback(async () => {
+    const apiUrl = import.meta.env.VITE_LEARNING_RECOMMENDATIONS_API as string | undefined;
+    const payload = {
+      skill: user?.profile?.businessCategory || 'entrepreneurship',
+      user_info: {
+        stage: ((user?.profile as any)?.ventureStage as LearningStage) || 'idea',
+        region: user?.location || null,
+        background: user?.profile?.businessIdea || null
+      }
+    };
+
+    setIsLoadingRecommendations(true);
+    setRecommendationError(null);
+
+    try {
+      if (!apiUrl) {
+        setLearningRecommendation(fallbackLearningRecommendation);
+        setUsedFallbackPlan(true);
+        setRecommendationError('Using a sample plan because the learning recommendation service is not configured.');
+        return;
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch learning recommendations: ${response.status} ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as LearningRecommendation;
+
+      setLearningRecommendation(data);
+      setUsedFallbackPlan(false);
+    } catch (error) {
+      console.error('Learning recommendation fetch failed:', error);
+      setLearningRecommendation(fallbackLearningRecommendation);
+      setUsedFallbackPlan(true);
+      setRecommendationError('We had trouble fetching fresh recommendations. Showing a proven learning path instead.');
+    } finally {
+      setIsLoadingRecommendations(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (currentStep === 'learning-recommendations' && !learningRecommendation && !isLoadingRecommendations) {
+      fetchLearningRecommendations();
+    }
+  }, [currentStep, learningRecommendation, isLoadingRecommendations, fetchLearningRecommendations]);
 
   const handleStepClick = (stepId: string) => {
     const completedSteps = user?.progress?.completedSteps || [];
@@ -145,6 +367,9 @@ export const EntrepreneurDashboard: React.FC = () => {
   };
 
   const renderStepContent = () => {
+    const activeRecommendation = learningRecommendation;
+    const activeConfidenceConfig = activeRecommendation ? getConfidenceConfig(activeRecommendation.confidence) : null;
+
     switch (currentStep) {
       case 'skillcraft-entrepreneurship-tasks':
         return (
@@ -777,7 +1002,7 @@ export const EntrepreneurDashboard: React.FC = () => {
 
               <div className="text-center neuro-inset p-6 rounded-neuro-lg">
                 <button
-                  onClick={() => completeStep('business-plan-creation', 'ai-mentor-program')}
+                  onClick={() => completeStep('business-plan-creation', 'learning-recommendations')}
                   className="neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg hover:scale-105 transition-all duration-300"
                 >
                   <FileText className="w-6 h-6 mr-3" />
@@ -785,6 +1010,257 @@ export const EntrepreneurDashboard: React.FC = () => {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </button>
               </div>
+            </div>
+          </div>
+        );
+
+      case 'learning-recommendations':
+        return (
+          <div className="p-8 bg-neuro-bg">
+            <div className="neuro-card hover:shadow-neuro-hover transition-all duration-300">
+              <div className="text-center mb-8">
+                <div className="w-24 h-24 neuro-icon mx-auto mb-6 bg-gradient-to-br from-neuro-primary to-neuro-primary-light neuro-animate-float">
+                  <GraduationCap className="w-12 h-12 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold neuro-text-primary mb-4">AI-Curated Learning Path</h2>
+                <p className="text-lg neuro-text-secondary max-w-2xl mx-auto">
+                  Personalized course recommendations to build the capabilities you need for your next venture milestone.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
+                  <button
+                    onClick={fetchLearningRecommendations}
+                    disabled={isLoadingRecommendations}
+                    className="neuro-button inline-flex items-center px-6 py-3 rounded-neuro-lg text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCcw className={`w-4 h-4 mr-2 ${isLoadingRecommendations ? 'animate-spin' : ''}`} />
+                    {isLoadingRecommendations ? 'Refreshing...' : 'Refresh Plan'}
+                  </button>
+                  {usedFallbackPlan && (
+                    <span className="text-xs neuro-text-secondary bg-neuro-bg-dark px-3 py-1 rounded-neuro">
+                      Showing a trusted fallback plan.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {recommendationError && (
+                <div className="neuro-inset border border-neuro-warning/40 bg-neuro-warning/5 text-neuro-warning px-6 py-4 rounded-neuro mb-6 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 mt-1 flex-shrink-0" />
+                  <div className="text-sm font-medium">{recommendationError}</div>
+                </div>
+              )}
+
+              {isLoadingRecommendations && (
+                <div className="space-y-6 animate-pulse">
+                  <div className="neuro-inset h-32 rounded-neuro"></div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="neuro-inset h-48 rounded-neuro"></div>
+                    <div className="neuro-inset h-48 rounded-neuro"></div>
+                  </div>
+                  <div className="neuro-inset h-64 rounded-neuro"></div>
+                </div>
+              )}
+
+              {!isLoadingRecommendations && activeRecommendation && (
+                <div className="space-y-8">
+                  <div className="neuro-inset p-6 rounded-neuro">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-14 h-14 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light">
+                          <Sparkles className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold neuro-text-primary mb-1">Focus Skill: {activeRecommendation.skill}</h3>
+                          {activeConfidenceConfig && (
+                            <span className={`inline-flex items-center px-3 py-1 rounded-neuro-sm text-sm font-semibold ${activeConfidenceConfig.badgeClassName}`}>
+                              <Award className="w-4 h-4 mr-2" />
+                              {activeConfidenceConfig.label}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="neuro-surface px-4 py-3 rounded-neuro">
+                          <div className="text-xs uppercase tracking-wide neuro-text-muted mb-1">Weekly Focus</div>
+                          <div className="flex items-center text-lg font-semibold neuro-text-primary">
+                            <Clock className="w-5 h-5 mr-2 text-neuro-primary" />
+                            {(activeRecommendation.learning_plan.weekly_hours || activeRecommendation.time_commitment_hours_per_week) > 0
+                              ? `${activeRecommendation.learning_plan.weekly_hours || activeRecommendation.time_commitment_hours_per_week} hrs`
+                              : 'Flexible'}
+                          </div>
+                        </div>
+                        <div className="neuro-surface px-4 py-3 rounded-neuro">
+                          <div className="text-xs uppercase tracking-wide neuro-text-muted mb-1">Total Duration</div>
+                          <div className="flex items-center text-lg font-semibold neuro-text-primary">
+                            <Calendar className="w-5 h-5 mr-2 text-neuro-primary" />
+                            {activeRecommendation.learning_plan.total_duration_weeks > 0
+                              ? `${activeRecommendation.learning_plan.total_duration_weeks} weeks`
+                              : 'Self-paced'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="neuro-text-secondary mt-4">
+                      {activeRecommendation.learning_plan.plan_summary}
+                    </p>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="neuro-surface p-6 rounded-neuro">
+                      <h4 className="text-sm font-semibold neuro-text-muted uppercase tracking-wide mb-2">Current Stage</h4>
+                      <p className="text-xl font-bold neuro-text-primary">{getStageLabel(activeRecommendation.user_info.stage)}</p>
+                    </div>
+                    <div className="neuro-surface p-6 rounded-neuro">
+                      <h4 className="text-sm font-semibold neuro-text-muted uppercase tracking-wide mb-2">Region Focus</h4>
+                      <p className="text-xl font-bold neuro-text-primary">{activeRecommendation.user_info.region || 'Global'}</p>
+                    </div>
+                    <div className="neuro-surface p-6 rounded-neuro">
+                      <h4 className="text-sm font-semibold neuro-text-muted uppercase tracking-wide mb-2">Background</h4>
+                      <p className="text-xl font-bold neuro-text-primary">
+                        {activeRecommendation.user_info.background || 'Generalist Entrepreneur'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-2xl font-bold neuro-text-primary mb-4">Step-by-Step Learning Sequence</h3>
+                    <div className="space-y-6">
+                      {activeRecommendation.learning_plan.sequence.map(sequenceItem => (
+                        <div key={sequenceItem.order} className="neuro-surface p-6 rounded-neuro">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                            <div className="flex items-start gap-4">
+                              <div className="w-12 h-12 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light flex items-center justify-center text-white font-bold text-lg">
+                                {sequenceItem.order}
+                              </div>
+                              <div>
+                                <h4 className="text-xl font-bold neuro-text-primary">{sequenceItem.course_title}</h4>
+                                <p className="text-sm neuro-text-secondary">{sequenceItem.provider_name}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {sequenceItem.difficulty && (
+                                <span className="neuro-inset px-3 py-1 rounded-neuro-sm text-sm font-semibold text-neuro-primary">
+                                  {formatDifficulty(sequenceItem.difficulty)}
+                                </span>
+                              )}
+                              <a
+                                href={sequenceItem.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="neuro-button text-sm px-4 py-2 rounded-neuro inline-flex items-center"
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                View Course
+                              </a>
+                            </div>
+                          </div>
+
+                          <div className="grid sm:grid-cols-3 gap-4">
+                            <div className="neuro-inset p-4 rounded-neuro flex items-center">
+                              <Clock className="w-5 h-5 text-neuro-primary mr-3" />
+                              <div>
+                                <div className="text-xs uppercase tracking-wide neuro-text-muted">Estimated Hours</div>
+                                <div className="text-lg font-semibold neuro-text-primary">
+                                  {sequenceItem.estimated_hours > 0 ? `${sequenceItem.estimated_hours} hrs` : 'Flexible'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="neuro-inset p-4 rounded-neuro flex items-center">
+                              <Zap className="w-5 h-5 text-neuro-success mr-3" />
+                              <div>
+                                <div className="text-xs uppercase tracking-wide neuro-text-muted">Weekly Focus</div>
+                                <div className="text-lg font-semibold neuro-text-primary">
+                                  {sequenceItem.planned_weekly_hours > 0 ? `${sequenceItem.planned_weekly_hours} hrs` : 'Flexible'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="neuro-inset p-4 rounded-neuro flex items-center">
+                              <Calendar className="w-5 h-5 text-neuro-warning mr-3" />
+                              <div>
+                                <div className="text-xs uppercase tracking-wide neuro-text-muted">Expected Duration</div>
+                                <div className="text-lg font-semibold neuro-text-primary">
+                                  {sequenceItem.expected_duration_weeks > 0 ? `${sequenceItem.expected_duration_weeks} wks` : 'Self-paced'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {sequenceItem.why_chosen && (
+                            <div className="neuro-inset p-4 rounded-neuro mt-4">
+                              <h5 className="font-semibold neuro-text-primary mb-2">Why this course matters</h5>
+                              <p className="text-sm neuro-text-secondary">{sequenceItem.why_chosen}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-2xl font-bold neuro-text-primary mb-4">Additional Courses to Explore</h3>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      {activeRecommendation.all_relevant_courses.map((course, index) => (
+                        <div key={`${course.course_title}-${index}`} className="neuro-surface p-5 rounded-neuro flex flex-col justify-between">
+                          <div>
+                            <h4 className="text-lg font-bold neuro-text-primary mb-2">{course.course_title}</h4>
+                            <p className="text-sm neuro-text-secondary mb-4">{course.provider_name}</p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold neuro-text-primary">
+                              {course.estimated_hours > 0 ? `${course.estimated_hours} hrs` : 'Flexible'}
+                            </span>
+                            {course.difficulty && (
+                              <span className="neuro-inset px-3 py-1 rounded-neuro-sm text-xs font-semibold text-neuro-primary">
+                                {formatDifficulty(course.difficulty)}
+                              </span>
+                            )}
+                          </div>
+                          <a
+                            href={course.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="neuro-button text-sm px-4 py-2 rounded-neuro inline-flex items-center mt-4"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View Course
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="neuro-inset p-6 rounded-neuro">
+                    <h3 className="text-2xl font-bold neuro-text-primary mb-4">Planning Assumptions</h3>
+                    <ul className="space-y-3">
+                      {activeRecommendation.assumptions.map((assumption, index) => (
+                        <li key={index} className="flex items-start">
+                          <div className="w-3 h-3 neuro-icon bg-gradient-to-br from-neuro-primary to-neuro-primary-light mr-3 mt-1">
+                            <div className="w-1 h-1 bg-white rounded-full"></div>
+                          </div>
+                          <span className="text-sm neuro-text-secondary">{assumption}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {!isLoadingRecommendations && !activeRecommendation && (
+                <div className="neuro-inset p-8 rounded-neuro text-center">
+                  <p className="text-lg neuro-text-secondary">No learning recommendations are available right now. Try refreshing to generate a plan.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="text-center neuro-inset p-6 rounded-neuro-lg mt-8">
+              <button
+                onClick={() => completeStep('learning-recommendations', 'ai-mentor-program')}
+                className="neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg hover:scale-105 transition-all duration-300"
+              >
+                <GraduationCap className="w-6 h-6 mr-3" />
+                <span>Continue to AI Mentor Program</span>
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </button>
             </div>
           </div>
         );
