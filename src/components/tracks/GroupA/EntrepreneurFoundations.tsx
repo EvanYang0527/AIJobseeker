@@ -190,7 +190,7 @@ export const EntrepreneurFoundations: React.FC = () => {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 sm:justify-end">
               <button
-                onClick={() => navigate('/career-exploration')}
+                onClick={() => navigate('/pathfinder/dashboard')}
                 className="neuro-button flex items-center justify-center gap-2 px-6 py-3 rounded-neuro"
               >
                 <Compass className="w-5 h-5" />
