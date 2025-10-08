@@ -5,14 +5,9 @@ export interface AzureChatMessage {
   content: string;
 }
 
-type JsonResponseFormat =
-  | { type: 'json_object' }
-  | { type: 'json_schema'; json_schema: Record<string, unknown> };
-
 interface ChatCompletionOptions {
   temperature?: number;
   maxTokens?: number;
-  responseFormat?: JsonResponseFormat;
 }
 
 interface AzureChatCompletionResponse {
@@ -57,8 +52,7 @@ export const callAzureChatCompletion = async (
         messages,
         temperature: options.temperature ?? 0.2,
         max_tokens: options.maxTokens ?? 1200,
-        top_p: 0.95,
-        ...(options.responseFormat ? { response_format: options.responseFormat } : {})
+        top_p: 0.95
       })
     }
   );
