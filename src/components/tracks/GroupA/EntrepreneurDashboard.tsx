@@ -568,16 +568,469 @@ RULES:
 - Use ONLY user-provided inputs (skills, goals, obstacles).
 - Explicitly emphasize that course lists come from retrieval, not model invention.
 - Keep all business steps and learning plan items concise, decision-ready, and aligned with the user’s stage (idea, MVP, early revenue, scaling).
+- The **business_plan** property MUST strictly adhere to the King’s Trust (Prince’s Trust) Business Plan JSON Schema provided below.
 
 OUTPUT FORMAT:
 {
   "roadmap_steps": [
     {"step": "string", "actions": ["string", "..."], "measurement": "string", "timeline": "string"}
   ],
-  "business_plan": {
-    "budget_considerations": ["string", "..."],
-    "ops_considerations": ["string", "..."],
-    "gtm_considerations": ["string", "..."]
+  "business_plan": "King's Trust business plan object matching the schema below"
+}
+
+BUSINESS PLAN JSON SCHEMA (for the business_plan property only):
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/kings-trust-business-plan.schema.json",
+  "title": "King's Trust (Prince's Trust) Business Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "getting_started",
+    "section_1_executive_summary",
+    "section_2_owner_background",
+    "section_3_products_services",
+    "section_4_market",
+    "section_5_market_research",
+    "section_6_marketing_strategy",
+    "section_7_competitor_analysis",
+    "section_8_operations_logistics",
+    "section_9_costs_pricing_strategy",
+    "section_10_financial_forecasts",
+    "section_11_backup_plan"
+  ],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Optional metadata for your system.",
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "string", "default": "1.0.0" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "authoring_tool": { "type": "string" }
+      }
+    },
+    "getting_started": {
+      "type": "object",
+      "title": "Whose plan is this?",
+      "additionalProperties": false,
+      "required": ["business_name", "owners", "business_contacts"],
+      "properties": {
+        "business_name": { "type": "string", "minLength": 1 },
+        "owners": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "role": { "type": "string" },
+              "email": { "type": "string", "format": "email" },
+              "phone": { "type": "string" }
+            }
+          }
+        },
+        "business_contacts": {
+          "type": "object",
+          "required": ["address"],
+          "additionalProperties": false,
+          "properties": {
+            "address": { "type": "string" },
+            "postcode": { "type": "string" },
+            "telephone": { "type": "string" },
+            "email": { "type": "string", "format": "email" }
+          }
+        },
+        "home_contacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "address": { "type": "string" },
+            "postcode": { "type": "string" },
+            "telephone": { "type": "string" },
+            "email": { "type": "string", "format": "email" }
+          }
+        }
+      }
+    },
+    "section_1_executive_summary": {
+      "type": "object",
+      "title": "Section 1 – Executive Summary",
+      "additionalProperties": false,
+      "required": ["business_summary", "business_aims", "financial_summary", "elevator_pitch"],
+      "properties": {
+        "business_summary": { "type": "string" },
+        "business_aims": { "type": "string" },
+        "financial_summary": { "type": "string" },
+        "elevator_pitch": {
+          "type": "object",
+          "required": ["business_name", "strapline", "pitch"],
+          "additionalProperties": false,
+          "properties": {
+            "business_name": { "type": "string" },
+            "strapline": { "type": "string" },
+            "pitch": { "type": "string" }
+          }
+        }
+      }
+    },
+    "section_2_owner_background": {
+      "type": "object",
+      "title": "Section 2 – Owner’s Background",
+      "additionalProperties": false,
+      "required": ["motivation"],
+      "properties": {
+        "motivation": { "type": "string" },
+        "work_experience": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "employer": { "type": "string" },
+              "role": { "type": "string" },
+              "dates": { "type": "string" },
+              "responsibilities": { "type": "string" }
+            }
+          }
+        },
+        "qualifications_education": { "type": "string" },
+        "training_completed": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "training_planned": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "hobbies_interests": { "type": "string" },
+        "additional_information": { "type": "string" }
+      }
+    },
+    "section_3_products_services": {
+      "type": "object",
+      "title": "Section 3 – Products and Services",
+      "additionalProperties": false,
+      "required": ["selling_type", "basic_description"],
+      "properties": {
+        "selling_type": {
+          "type": "string",
+          "enum": ["product", "service", "both"]
+        },
+        "basic_description": { "type": "string" },
+        "offerings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "launch_phase": { "type": "string", "enum": ["start", "later"] },
+              "planned_start_date": { "type": "string", "format": "date" }
+            }
+          }
+        },
+        "rollout_rationale": { "type": "string" },
+        "additional_information": { "type": "string" }
+      }
+    },
+    "section_4_market": {
+      "type": "object",
+      "title": "Section 4 – The Market",
+      "additionalProperties": false,
+      "required": ["customer_type", "typical_customer"],
+      "properties": {
+        "customer_type": {
+          "type": "string",
+          "enum": ["individuals", "businesses", "both"]
+        },
+        "typical_customer": { "type": "string" },
+        "customer_locations": { "type": "string" },
+        "buying_triggers": { "type": "string" },
+        "choice_factors": { "type": "string" },
+        "previous_sales": {
+          "type": "object",
+          "required": ["has_sold"],
+          "additionalProperties": false,
+          "properties": {
+            "has_sold": { "type": "boolean" },
+            "details": { "type": "string" }
+          }
+        },
+        "waiting_customers": {
+          "type": "object",
+          "required": ["has_waiting_customers"],
+          "additionalProperties": false,
+          "properties": {
+            "has_waiting_customers": { "type": "boolean" },
+            "details": { "type": "string" }
+          }
+        },
+        "additional_information": { "type": "string" }
+      }
+    },
+    "section_5_market_research": {
+      "type": "object",
+      "title": "Section 5 – Market Research",
+      "additionalProperties": false,
+      "properties": {
+        "desk_research_findings": { "type": "string" },
+        "field_research_questionnaires": { "type": "string" },
+        "field_research_test_trading": { "type": "string" },
+        "additional_information": { "type": "string" }
+      }
+    },
+    "section_6_marketing_strategy": {
+      "type": "object",
+      "title": "Section 6 – Marketing Strategy",
+      "additionalProperties": false,
+      "properties": {
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["activity", "rationale"],
+            "additionalProperties": false,
+            "properties": {
+              "activity": { "type": "string" },
+              "rationale": { "type": "string" },
+              "estimated_cost": { "type": "number", "minimum": 0 },
+              "notes": { "type": "string" }
+            }
+          }
+        },
+        "total_estimated_cost": { "type": "number", "minimum": 0 }
+      }
+    },
+    "section_7_competitor_analysis": {
+      "type": "object",
+      "title": "Section 7 – Competitor Analysis",
+      "additionalProperties": false,
+      "properties": {
+        "competitors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "location": { "type": "string" },
+              "product_service": { "type": "string" },
+              "price": { "type": "string" },
+              "strengths": { "type": "string" },
+              "weaknesses": { "type": "string" },
+              "business_size": { "type": "string" }
+            }
+          }
+        },
+        "swot": {
+          "type": "object",
+          "required": ["strengths", "weaknesses", "opportunities", "threats"],
+          "additionalProperties": false,
+          "properties": {
+            "strengths": { "type": "string" },
+            "weaknesses": { "type": "string" },
+            "opportunities": { "type": "string" },
+            "threats": { "type": "string" }
+          }
+        },
+        "usp": { "type": "string" }
+      }
+    },
+    "section_8_operations_logistics": {
+      "type": "object",
+      "title": "Section 8 – Operations and Logistics",
+      "additionalProperties": false,
+      "properties": {
+        "production": { "type": "string" },
+        "delivery": { "type": "string" },
+        "payment_methods_terms": { "type": "string" },
+        "suppliers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "location": { "type": "string" },
+              "items_required": { "type": "string" },
+              "prices": { "type": "string" },
+              "payment_arrangements": { "type": "string" },
+              "reason_for_choice": { "type": "string" }
+            }
+          }
+        },
+        "premises": { "type": "string" },
+        "equipment": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "item": { "type": "string" },
+              "already_owned": { "type": "boolean" },
+              "condition": { "type": "string", "enum": ["new", "second_hand"] },
+              "purchased_from": { "type": "string" },
+              "price": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "transport": { "type": "string" },
+        "legal_requirements": { "type": "string" },
+        "insurance": { "type": "string" },
+        "management_staff": { "type": "string" },
+        "additional_information": { "type": "string" }
+      }
+    },
+    "section_9_costs_pricing_strategy": {
+      "type": "object",
+      "title": "Section 9 – Costs and Pricing Strategy",
+      "additionalProperties": false,
+      "properties": {
+        "pricing_table": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "product_service_name": { "type": "string" },
+              "units_in_calc": { "type": "number", "minimum": 0 },
+              "components": { "type": "string" },
+              "total_cost": { "type": "number", "minimum": 0 },
+              "cost_per_unit": { "type": "number", "minimum": 0 },
+              "price_per_unit": { "type": "number", "minimum": 0 },
+              "profit_margin_amount": { "type": "number" },
+              "profit_margin_percent": { "type": "number" },
+              "markup_percent": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "section_10_financial_forecasts": {
+      "type": "object",
+      "title": "Section 10 – Financial Forecasts",
+      "additionalProperties": false,
+      "required": ["sales_and_costs_forecast", "personal_survival_budget", "cashflow_forecast", "startup_costs_table"],
+      "properties": {
+        "sales_and_costs_forecast": {
+          "type": "array",
+          "minItems": 12,
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "required": ["month_name", "sales_forecast", "costs_forecast"],
+            "additionalProperties": false,
+            "properties": {
+              "month_index": { "type": "integer", "minimum": 1, "maximum": 12 },
+              "month_name": { "type": "string" },
+              "sales_forecast": { "type": "number", "minimum": 0 },
+              "costs_forecast": { "type": "number", "minimum": 0 },
+              "assumptions": { "type": "string" }
+            }
+          }
+        },
+        "personal_survival_budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["costs", "income"],
+          "properties": {
+            "costs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["category", "monthly_cost"],
+                "additionalProperties": false,
+                "properties": {
+                  "category": { "type": "string" },
+                  "monthly_cost": { "type": "number", "minimum": 0 }
+                }
+              }
+            },
+            "income": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["source", "monthly_amount"],
+                "additionalProperties": false,
+                "properties": {
+                  "source": { "type": "string" },
+                  "monthly_amount": { "type": "number", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        "cashflow_forecast": {
+          "type": "array",
+          "minItems": 12,
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "required": ["month_name", "money_in", "money_out"],
+            "additionalProperties": false,
+            "properties": {
+              "month_index": { "type": "integer", "minimum": 1, "maximum": 12 },
+              "month_name": { "type": "string" },
+              "money_in": {
+                "type": "object",
+                "required": ["total"],
+                "additionalProperties": false,
+                "properties": {
+                  "princes_trust_funding": { "type": "number", "minimum": 0 },
+                  "other_funding": { "type": "number", "minimum": 0 },
+                  "own_funds": { "type": "number", "minimum": 0 },
+                  "sales_income": { "type": "number", "minimum": 0 },
+                  "other": { "type": "number", "minimum": 0 },
+                  "total": { "type": "number", "minimum": 0 }
+                }
+              },
+              "money_out": {
+                "type": "object",
+                "required": ["total"],
+                "additionalProperties": false,
+                "properties": {
+                  "trust_loan_repayments": { "type": "number", "minimum": 0 },
+                  "personal_drawings": { "type": "number", "minimum": 0 },
+                  "other": { "type": "number", "minimum": 0 },
+                  "total": { "type": "number", "minimum": 0 }
+                }
+              },
+              "opening_balance": { "type": "number" },
+              "closing_balance": { "type": "number" }
+            }
+          }
+        },
+        "startup_costs_table": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["item", "calculation", "total_cost"],
+            "additionalProperties": false,
+            "properties": {
+              "item": { "type": "string" },
+              "calculation": { "type": "string" },
+              "total_cost": { "type": "number", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "section_11_backup_plan": {
+      "type": "object",
+      "title": "Section 11 – Back-up Plan",
+      "additionalProperties": false,
+      "properties": {
+        "short_term_plan": { "type": "string" },
+        "long_term_plan": { "type": "string" },
+        "plan_b": { "type": "string" },
+        "plan_b_additional": { "type": "string" }
+      }
+    }
   }
 }
 `;
@@ -1379,9 +1832,19 @@ export const EntrepreneurDashboard: React.FC = () => {
         const personalityImplications = derivedInsights?.personality_implications ?? [];
         const availabilityWindows = availability?.weekly_windows ?? [];
         const roadmapSteps = woopPlan?.roadmap_steps ?? [];
-        const budgetConsiderations = woopPlan?.business_plan?.budget_considerations ?? [];
-        const opsConsiderations = woopPlan?.business_plan?.ops_considerations ?? [];
-        const gtmConsiderations = woopPlan?.business_plan?.gtm_considerations ?? [];
+        const businessPlan = woopPlan?.business_plan;
+        const gettingStarted = businessPlan?.getting_started;
+        const executiveSummary = businessPlan?.section_1_executive_summary;
+        const ownerBackground = businessPlan?.section_2_owner_background;
+        const productsServices = businessPlan?.section_3_products_services;
+        const market = businessPlan?.section_4_market;
+        const marketResearch = businessPlan?.section_5_market_research;
+        const marketingStrategy = businessPlan?.section_6_marketing_strategy;
+        const competitorAnalysis = businessPlan?.section_7_competitor_analysis;
+        const operationsLogistics = businessPlan?.section_8_operations_logistics;
+        const costsPricing = businessPlan?.section_9_costs_pricing_strategy;
+        const financialForecasts = businessPlan?.section_10_financial_forecasts;
+        const backupPlan = businessPlan?.section_11_backup_plan;
 
         return (
           <div className="p-8 bg-neuro-bg">
@@ -1913,65 +2376,906 @@ export const EntrepreneurDashboard: React.FC = () => {
                       </div>
 
                       <div>
-                        <h4 className="text-xl font-bold neuro-text-primary mb-6">Business Plan Considerations</h4>
-                        <div className="grid md:grid-cols-3 gap-6">
-                          <div className="neuro-inset p-6 rounded-neuro">
-                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                              <DollarSign className="w-5 h-5 text-neuro-warning mr-2" />
-                              Budget Considerations
-                            </h5>
-                            <div className="space-y-2">
-                              {budgetConsiderations.length ? (
-                                budgetConsiderations.map((item, index) => (
-                                  <div key={index} className="flex items-start">
-                                    <span className="w-2 h-2 bg-neuro-warning rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                                    <span className="neuro-text-secondary text-sm">{item}</span>
+                        <h4 className="text-xl font-bold neuro-text-primary mb-6">King's Trust Business Plan</h4>
+                        {businessPlan ? (
+                          <div className="space-y-6">
+                            {businessPlan.metadata && (
+                              <div className="neuro-inset p-6 rounded-neuro">
+                                <h5 className="font-bold neuro-text-primary mb-3">Metadata</h5>
+                                <div className="grid sm:grid-cols-3 gap-4 text-sm neuro-text-secondary">
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Version:</span>{' '}
+                                    {businessPlan.metadata.version?.trim() || '1.0.0'}
                                   </div>
-                                ))
-                              ) : (
-                                <p className="text-sm neuro-text-secondary italic">No budget notes provided.</p>
-                              )}
-                            </div>
-                          </div>
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Generated at:</span>{' '}
+                                    {businessPlan.metadata.generated_at?.trim() || 'Not provided.'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Authoring tool:</span>{' '}
+                                    {businessPlan.metadata.authoring_tool?.trim() || 'Not provided.'}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
-                          <div className="neuro-inset p-6 rounded-neuro">
-                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                              <Building2 className="w-5 h-5 text-neuro-primary mr-2" />
-                              Operations Considerations
-                            </h5>
-                            <div className="space-y-2">
-                              {opsConsiderations.length ? (
-                                opsConsiderations.map((item, index) => (
-                                  <div key={index} className="flex items-start">
-                                    <span className="w-2 h-2 bg-neuro-primary rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                                    <span className="neuro-text-secondary text-sm">{item}</span>
+                            <div className="grid lg:grid-cols-2 gap-6">
+                              <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                                <h5 className="font-bold neuro-text-primary">Getting Started</h5>
+                                <div className="space-y-2 text-sm neuro-text-secondary">
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Business name:</span>{' '}
+                                    {gettingStarted?.business_name?.trim() || 'Not provided.'}
                                   </div>
-                                ))
-                              ) : (
-                                <p className="text-sm neuro-text-secondary italic">No operations notes provided.</p>
-                              )}
-                            </div>
-                          </div>
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Business contact:</span>
+                                    <div className="mt-2 space-y-1">
+                                      <div>
+                                        <span className="font-semibold">Address:</span>{' '}
+                                        {gettingStarted?.business_contacts.address?.trim() || 'Not provided.'}
+                                      </div>
+                                      {gettingStarted?.business_contacts.postcode && (
+                                        <div>
+                                          <span className="font-semibold">Postcode:</span>{' '}
+                                          {gettingStarted.business_contacts.postcode}
+                                        </div>
+                                      )}
+                                      {gettingStarted?.business_contacts.telephone && (
+                                        <div>
+                                          <span className="font-semibold">Telephone:</span>{' '}
+                                          {gettingStarted.business_contacts.telephone}
+                                        </div>
+                                      )}
+                                      {gettingStarted?.business_contacts.email && (
+                                        <div>
+                                          <span className="font-semibold">Email:</span>{' '}
+                                          {gettingStarted.business_contacts.email}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Home contact:</span>
+                                    {gettingStarted?.home_contacts ? (
+                                      <div className="mt-2 space-y-1">
+                                        <div>
+                                          <span className="font-semibold">Address:</span>{' '}
+                                          {gettingStarted.home_contacts.address?.trim() || 'Not provided.'}
+                                        </div>
+                                        {gettingStarted.home_contacts.postcode && (
+                                          <div>
+                                            <span className="font-semibold">Postcode:</span>{' '}
+                                            {gettingStarted.home_contacts.postcode}
+                                          </div>
+                                        )}
+                                        {gettingStarted.home_contacts.telephone && (
+                                          <div>
+                                            <span className="font-semibold">Telephone:</span>{' '}
+                                            {gettingStarted.home_contacts.telephone}
+                                          </div>
+                                        )}
+                                        {gettingStarted.home_contacts.email && (
+                                          <div>
+                                            <span className="font-semibold">Email:</span>{' '}
+                                            {gettingStarted.home_contacts.email}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm italic mt-1">Not provided.</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div>
+                                  <h6 className="font-semibold text-neuro-primary mb-2">Owners</h6>
+                                  {gettingStarted?.owners?.length ? (
+                                    <div className="space-y-3">
+                                      {gettingStarted.owners.map((owner, index) => (
+                                        <div key={`${owner.name}-${index}`} className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary">
+                                          <div>
+                                            <span className="font-semibold text-neuro-primary">Name:</span>{' '}
+                                            {owner.name?.trim() || 'Not provided.'}
+                                          </div>
+                                          {owner.role && (
+                                            <div>
+                                              <span className="font-semibold text-neuro-primary">Role:</span>{' '}
+                                              {owner.role}
+                                            </div>
+                                          )}
+                                          {owner.email && (
+                                            <div>
+                                              <span className="font-semibold text-neuro-primary">Email:</span>{' '}
+                                              {owner.email}
+                                            </div>
+                                          )}
+                                          {owner.phone && (
+                                            <div>
+                                              <span className="font-semibold text-neuro-primary">Phone:</span>{' '}
+                                              {owner.phone}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm italic neuro-text-secondary">No owners captured.</p>
+                                  )}
+                                </div>
+                              </div>
 
-                          <div className="neuro-inset p-6 rounded-neuro">
-                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                              <TrendingUp className="w-5 h-5 text-neuro-secondary mr-2" />
-                              GTM Considerations
-                            </h5>
-                            <div className="space-y-2">
-                              {gtmConsiderations.length ? (
-                                gtmConsiderations.map((item, index) => (
-                                  <div key={index} className="flex items-start">
-                                    <span className="w-2 h-2 bg-neuro-secondary rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                                    <span className="neuro-text-secondary text-sm">{item}</span>
+                              <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                                <h5 className="font-bold neuro-text-primary">Executive Summary</h5>
+                                <div className="space-y-3 text-sm neuro-text-secondary">
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Business summary:</span>
+                                    <p className="mt-1">{executiveSummary?.business_summary?.trim() || 'Not provided.'}</p>
                                   </div>
-                                ))
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Business aims:</span>
+                                    <p className="mt-1">{executiveSummary?.business_aims?.trim() || 'Not provided.'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Financial summary:</span>
+                                    <p className="mt-1">{executiveSummary?.financial_summary?.trim() || 'Not provided.'}</p>
+                                  </div>
+                                </div>
+                                {executiveSummary?.elevator_pitch && (
+                                  <div className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                    <h6 className="font-semibold text-neuro-primary">Elevator pitch</h6>
+                                    <div>
+                                      <span className="font-semibold">Name:</span>{' '}
+                                      {executiveSummary.elevator_pitch.business_name?.trim() || 'Not provided.'}
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">Strapline:</span>{' '}
+                                      {executiveSummary.elevator_pitch.strapline?.trim() || 'Not provided.'}
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">Pitch:</span>
+                                      <p className="mt-1">{executiveSummary.elevator_pitch.pitch?.trim() || 'Not provided.'}</p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid lg:grid-cols-2 gap-6">
+                              <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                                <h5 className="font-bold neuro-text-primary">Owner Background</h5>
+                                <div className="text-sm neuro-text-secondary space-y-2">
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Motivation:</span>
+                                    <p className="mt-1">{ownerBackground?.motivation?.trim() || 'Not provided.'}</p>
+                                  </div>
+                                  {ownerBackground?.qualifications_education && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Qualifications & education:</span>
+                                      <p className="mt-1">{ownerBackground.qualifications_education}</p>
+                                    </div>
+                                  )}
+                                  {ownerBackground?.hobbies_interests && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Hobbies & interests:</span>
+                                      <p className="mt-1">{ownerBackground.hobbies_interests}</p>
+                                    </div>
+                                  )}
+                                  {ownerBackground?.additional_information && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Additional information:</span>
+                                      <p className="mt-1">{ownerBackground.additional_information}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                {ownerBackground?.work_experience?.length ? (
+                                  <div>
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Work experience</h6>
+                                    <div className="space-y-3">
+                                      {ownerBackground.work_experience.map((experience, index) => (
+                                        <div key={index} className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                          {experience.employer && (
+                                            <div>
+                                              <span className="font-semibold">Employer:</span>{' '}
+                                              {experience.employer}
+                                            </div>
+                                          )}
+                                          {experience.role && (
+                                            <div>
+                                              <span className="font-semibold">Role:</span>{' '}
+                                              {experience.role}
+                                            </div>
+                                          )}
+                                          {experience.dates && (
+                                            <div>
+                                              <span className="font-semibold">Dates:</span>{' '}
+                                              {experience.dates}
+                                            </div>
+                                          )}
+                                          {experience.responsibilities && (
+                                            <div>
+                                              <span className="font-semibold">Responsibilities:</span>
+                                              <p className="mt-1">{experience.responsibilities}</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm italic neuro-text-secondary">No work experience listed.</p>
+                                )}
+                                {(ownerBackground?.training_completed?.length || ownerBackground?.training_planned?.length) && (
+                                  <div className="grid sm:grid-cols-2 gap-4">
+                                    {ownerBackground?.training_completed?.length ? (
+                                      <div>
+                                        <h6 className="font-semibold text-neuro-primary mb-2">Training completed</h6>
+                                        <ul className="list-disc list-inside text-sm neuro-text-secondary space-y-1">
+                                          {ownerBackground.training_completed.map((item, index) => (
+                                            <li key={index}>{item}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    ) : null}
+                                    {ownerBackground?.training_planned?.length ? (
+                                      <div>
+                                        <h6 className="font-semibold text-neuro-primary mb-2">Training planned</h6>
+                                        <ul className="list-disc list-inside text-sm neuro-text-secondary space-y-1">
+                                          {ownerBackground.training_planned.map((item, index) => (
+                                            <li key={index}>{item}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                                <h5 className="font-bold neuro-text-primary">Products & Services</h5>
+                                <div className="text-sm neuro-text-secondary space-y-2">
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Selling type:</span>{' '}
+                                    {productsServices?.selling_type || 'Not provided.'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Description:</span>
+                                    <p className="mt-1">{productsServices?.basic_description?.trim() || 'Not provided.'}</p>
+                                  </div>
+                                  {productsServices?.rollout_rationale && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Rollout rationale:</span>
+                                      <p className="mt-1">{productsServices.rollout_rationale}</p>
+                                    </div>
+                                  )}
+                                  {productsServices?.additional_information && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Additional information:</span>
+                                      <p className="mt-1">{productsServices.additional_information}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                {productsServices?.offerings?.length ? (
+                                  <div>
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Offerings</h6>
+                                    <div className="space-y-3">
+                                      {productsServices.offerings.map((offering, index) => (
+                                        <div key={`${offering.name}-${index}`} className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                          <div>
+                                            <span className="font-semibold">Name:</span>{' '}
+                                            {offering.name}
+                                          </div>
+                                          <div>
+                                            <span className="font-semibold">Description:</span>
+                                            <p className="mt-1">{offering.description}</p>
+                                          </div>
+                                          {offering.launch_phase && (
+                                            <div>
+                                              <span className="font-semibold">Launch phase:</span>{' '}
+                                              {offering.launch_phase}
+                                            </div>
+                                          )}
+                                          {offering.planned_start_date && (
+                                            <div>
+                                              <span className="font-semibold">Planned start:</span>{' '}
+                                              {offering.planned_start_date}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm italic neuro-text-secondary">No offerings detailed.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid lg:grid-cols-2 gap-6">
+                              <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                                <h5 className="font-bold neuro-text-primary">Market Overview</h5>
+                                <div className="text-sm neuro-text-secondary space-y-2">
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Customer type:</span>{' '}
+                                    {market?.customer_type || 'Not provided.'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Typical customer:</span>
+                                    <p className="mt-1">{market?.typical_customer?.trim() || 'Not provided.'}</p>
+                                  </div>
+                                  {market?.customer_locations && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Customer locations:</span>
+                                      <p className="mt-1">{market.customer_locations}</p>
+                                    </div>
+                                  )}
+                                  {market?.buying_triggers && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Buying triggers:</span>
+                                      <p className="mt-1">{market.buying_triggers}</p>
+                                    </div>
+                                  )}
+                                  {market?.choice_factors && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Choice factors:</span>
+                                      <p className="mt-1">{market.choice_factors}</p>
+                                    </div>
+                                  )}
+                                  {market?.additional_information && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Additional information:</span>
+                                      <p className="mt-1">{market.additional_information}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                  {market?.previous_sales && (
+                                    <div className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                      <h6 className="font-semibold text-neuro-primary">Previous sales</h6>
+                                      <div>
+                                        <span className="font-semibold">Has sold:</span>{' '}
+                                        {market.previous_sales.has_sold ? 'Yes' : 'No'}
+                                      </div>
+                                      {market.previous_sales.details && (
+                                        <div>
+                                          <span className="font-semibold">Details:</span>
+                                          <p className="mt-1">{market.previous_sales.details}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  {market?.waiting_customers && (
+                                    <div className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                      <h6 className="font-semibold text-neuro-primary">Waiting customers</h6>
+                                      <div>
+                                        <span className="font-semibold">Has waiting customers:</span>{' '}
+                                        {market.waiting_customers.has_waiting_customers ? 'Yes' : 'No'}
+                                      </div>
+                                      {market.waiting_customers.details && (
+                                        <div>
+                                          <span className="font-semibold">Details:</span>
+                                          <p className="mt-1">{market.waiting_customers.details}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                                <h5 className="font-bold neuro-text-primary">Market Research & Competition</h5>
+                                <div className="text-sm neuro-text-secondary space-y-2">
+                                  {marketResearch?.desk_research_findings && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Desk research findings:</span>
+                                      <p className="mt-1">{marketResearch.desk_research_findings}</p>
+                                    </div>
+                                  )}
+                                  {marketResearch?.field_research_questionnaires && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Questionnaires:</span>
+                                      <p className="mt-1">{marketResearch.field_research_questionnaires}</p>
+                                    </div>
+                                  )}
+                                  {marketResearch?.field_research_test_trading && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Test trading:</span>
+                                      <p className="mt-1">{marketResearch.field_research_test_trading}</p>
+                                    </div>
+                                  )}
+                                  {marketResearch?.additional_information && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Additional information:</span>
+                                      <p className="mt-1">{marketResearch.additional_information}</p>
+                                    </div>
+                                  )}
+                                  {!marketResearch && (
+                                    <p className="text-sm italic">No market research details provided.</p>
+                                  )}
+                                </div>
+                                <div className="space-y-4">
+                                  {marketingStrategy?.activities?.length ? (
+                                    <div>
+                                      <h6 className="font-semibold text-neuro-primary mb-2">Marketing activities</h6>
+                                      <div className="space-y-3">
+                                        {marketingStrategy.activities.map((activity, index) => (
+                                          <div key={index} className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                            <div>
+                                              <span className="font-semibold">Activity:</span>{' '}
+                                              {activity.activity}
+                                            </div>
+                                            <div>
+                                              <span className="font-semibold">Rationale:</span>
+                                              <p className="mt-1">{activity.rationale}</p>
+                                            </div>
+                                            {activity.estimated_cost != null && (
+                                              <div>
+                                                <span className="font-semibold">Estimated cost:</span>{' '}
+                                                {`$${activity.estimated_cost.toLocaleString()}`}
+                                              </div>
+                                            )}
+                                            {activity.notes && (
+                                              <div>
+                                                <span className="font-semibold">Notes:</span>
+                                                <p className="mt-1">{activity.notes}</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm italic neuro-text-secondary">No marketing activities listed.</p>
+                                  )}
+                                  {marketingStrategy?.total_estimated_cost != null && (
+                                    <div className="text-sm neuro-text-secondary">
+                                      <span className="font-semibold text-neuro-primary">Total estimated cost:</span>{' '}
+                                      {`$${marketingStrategy.total_estimated_cost.toLocaleString()}`}
+                                    </div>
+                                  )}
+                                  {competitorAnalysis?.competitors?.length ? (
+                                    <div>
+                                      <h6 className="font-semibold text-neuro-primary mb-2">Competitors</h6>
+                                      <div className="space-y-3">
+                                        {competitorAnalysis.competitors.map((competitor, index) => (
+                                          <div key={index} className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                            {competitor.name && (
+                                              <div>
+                                                <span className="font-semibold">Name:</span>{' '}
+                                                {competitor.name}
+                                              </div>
+                                            )}
+                                            {competitor.location && (
+                                              <div>
+                                                <span className="font-semibold">Location:</span>{' '}
+                                                {competitor.location}
+                                              </div>
+                                            )}
+                                            {competitor.product_service && (
+                                              <div>
+                                                <span className="font-semibold">Offering:</span>{' '}
+                                                {competitor.product_service}
+                                              </div>
+                                            )}
+                                            {competitor.price && (
+                                              <div>
+                                                <span className="font-semibold">Price:</span>{' '}
+                                                {competitor.price}
+                                              </div>
+                                            )}
+                                            {competitor.strengths && (
+                                              <div>
+                                                <span className="font-semibold">Strengths:</span>
+                                                <p className="mt-1">{competitor.strengths}</p>
+                                              </div>
+                                            )}
+                                            {competitor.weaknesses && (
+                                              <div>
+                                                <span className="font-semibold">Weaknesses:</span>
+                                                <p className="mt-1">{competitor.weaknesses}</p>
+                                              </div>
+                                            )}
+                                            {competitor.business_size && (
+                                              <div>
+                                                <span className="font-semibold">Business size:</span>{' '}
+                                                {competitor.business_size}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm italic neuro-text-secondary">No competitors documented.</p>
+                                  )}
+                                  {competitorAnalysis?.swot && (
+                                    <div className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                      <h6 className="font-semibold text-neuro-primary">SWOT</h6>
+                                      <div>
+                                        <span className="font-semibold">Strengths:</span>
+                                        <p className="mt-1">{competitorAnalysis.swot.strengths}</p>
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold">Weaknesses:</span>
+                                        <p className="mt-1">{competitorAnalysis.swot.weaknesses}</p>
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold">Opportunities:</span>
+                                        <p className="mt-1">{competitorAnalysis.swot.opportunities}</p>
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold">Threats:</span>
+                                        <p className="mt-1">{competitorAnalysis.swot.threats}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {competitorAnalysis?.usp && (
+                                    <div className="text-sm neuro-text-secondary">
+                                      <span className="font-semibold text-neuro-primary">Unique selling point:</span>
+                                      <p className="mt-1">{competitorAnalysis.usp}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid lg:grid-cols-2 gap-6">
+                              <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                                <h5 className="font-bold neuro-text-primary">Operations & Logistics</h5>
+                                <div className="text-sm neuro-text-secondary space-y-2">
+                                  {operationsLogistics?.production && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Production:</span>
+                                      <p className="mt-1">{operationsLogistics.production}</p>
+                                    </div>
+                                  )}
+                                  {operationsLogistics?.delivery && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Delivery:</span>
+                                      <p className="mt-1">{operationsLogistics.delivery}</p>
+                                    </div>
+                                  )}
+                                  {operationsLogistics?.payment_methods_terms && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Payment methods & terms:</span>
+                                      <p className="mt-1">{operationsLogistics.payment_methods_terms}</p>
+                                    </div>
+                                  )}
+                                  {operationsLogistics?.premises && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Premises:</span>
+                                      <p className="mt-1">{operationsLogistics.premises}</p>
+                                    </div>
+                                  )}
+                                  {operationsLogistics?.transport && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Transport:</span>
+                                      <p className="mt-1">{operationsLogistics.transport}</p>
+                                    </div>
+                                  )}
+                                  {operationsLogistics?.legal_requirements && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Legal requirements:</span>
+                                      <p className="mt-1">{operationsLogistics.legal_requirements}</p>
+                                    </div>
+                                  )}
+                                  {operationsLogistics?.insurance && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Insurance:</span>
+                                      <p className="mt-1">{operationsLogistics.insurance}</p>
+                                    </div>
+                                  )}
+                                  {operationsLogistics?.management_staff && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Management & staff:</span>
+                                      <p className="mt-1">{operationsLogistics.management_staff}</p>
+                                    </div>
+                                  )}
+                                  {operationsLogistics?.additional_information && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Additional information:</span>
+                                      <p className="mt-1">{operationsLogistics.additional_information}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                {(operationsLogistics?.suppliers?.length || operationsLogistics?.equipment?.length) ? (
+                                  <div className="space-y-4">
+                                    {operationsLogistics?.suppliers?.length ? (
+                                      <div>
+                                        <h6 className="font-semibold text-neuro-primary mb-2">Suppliers</h6>
+                                        <div className="space-y-3">
+                                          {operationsLogistics.suppliers.map((supplier, index) => (
+                                            <div key={index} className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                              {supplier.name && (
+                                                <div>
+                                                  <span className="font-semibold">Name:</span>{' '}
+                                                  {supplier.name}
+                                                </div>
+                                              )}
+                                              {supplier.location && (
+                                                <div>
+                                                  <span className="font-semibold">Location:</span>{' '}
+                                                  {supplier.location}
+                                                </div>
+                                              )}
+                                              {supplier.items_required && (
+                                                <div>
+                                                  <span className="font-semibold">Items required:</span>
+                                                  <p className="mt-1">{supplier.items_required}</p>
+                                                </div>
+                                              )}
+                                              {supplier.prices && (
+                                                <div>
+                                                  <span className="font-semibold">Prices:</span>{' '}
+                                                  {supplier.prices}
+                                                </div>
+                                              )}
+                                              {supplier.payment_arrangements && (
+                                                <div>
+                                                  <span className="font-semibold">Payment arrangements:</span>
+                                                  <p className="mt-1">{supplier.payment_arrangements}</p>
+                                                </div>
+                                              )}
+                                              {supplier.reason_for_choice && (
+                                                <div>
+                                                  <span className="font-semibold">Reason for choice:</span>
+                                                  <p className="mt-1">{supplier.reason_for_choice}</p>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                    {operationsLogistics?.equipment?.length ? (
+                                      <div>
+                                        <h6 className="font-semibold text-neuro-primary mb-2">Equipment</h6>
+                                        <div className="space-y-3">
+                                          {operationsLogistics.equipment.map((item, index) => (
+                                            <div key={index} className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary space-y-1">
+                                              {item.item && (
+                                                <div>
+                                                  <span className="font-semibold">Item:</span>{' '}
+                                                  {item.item}
+                                                </div>
+                                              )}
+                                              {item.already_owned != null && (
+                                                <div>
+                                                  <span className="font-semibold">Already owned:</span>{' '}
+                                                  {item.already_owned ? 'Yes' : 'No'}
+                                                </div>
+                                              )}
+                                              {item.condition && (
+                                                <div>
+                                                  <span className="font-semibold">Condition:</span>{' '}
+                                                  {item.condition}
+                                                </div>
+                                              )}
+                                              {item.purchased_from && (
+                                                <div>
+                                                  <span className="font-semibold">Purchased from:</span>{' '}
+                                                  {item.purchased_from}
+                                                </div>
+                                              )}
+                                              {item.price != null && (
+                                                <div>
+                                                  <span className="font-semibold">Price:</span>{' '}
+                                                  {`$${item.price.toLocaleString()}`}
+                                                </div>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm italic neuro-text-secondary">No suppliers or equipment listed.</p>
+                                )}
+                              </div>
+
+                              <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                                <h5 className="font-bold neuro-text-primary">Costs & Pricing</h5>
+                                {costsPricing?.pricing_table?.length ? (
+                                  <div className="overflow-x-auto">
+                                    <table className="min-w-full text-sm neuro-text-secondary border-separate border-spacing-y-2">
+                                      <thead>
+                                        <tr className="text-left text-neuro-primary">
+                                          <th className="px-3 py-2">Product/Service</th>
+                                          <th className="px-3 py-2">Units</th>
+                                          <th className="px-3 py-2">Total cost</th>
+                                          <th className="px-3 py-2">Price/unit</th>
+                                          <th className="px-3 py-2">Margin %</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {costsPricing.pricing_table.map((entry, index) => (
+                                          <tr key={index} className="neuro-surface">
+                                            <td className="px-3 py-2 font-semibold text-neuro-primary">{entry.product_service_name || '—'}</td>
+                                            <td className="px-3 py-2">{entry.units_in_calc ?? '—'}</td>
+                                            <td className="px-3 py-2">{entry.total_cost != null ? `$${entry.total_cost.toLocaleString()}` : '—'}</td>
+                                            <td className="px-3 py-2">{entry.price_per_unit != null ? `$${entry.price_per_unit.toLocaleString()}` : '—'}</td>
+                                            <td className="px-3 py-2">{entry.profit_margin_percent != null ? `${entry.profit_margin_percent}%` : '—'}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm italic neuro-text-secondary">No pricing table entries provided.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary">Financial Forecasts</h5>
+                              {financialForecasts ? (
+                                <div className="space-y-6">
+                                  <div>
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Sales & costs forecast</h6>
+                                    {financialForecasts.sales_and_costs_forecast?.length ? (
+                                      <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm neuro-text-secondary">
+                                          <thead className="text-neuro-primary">
+                                            <tr>
+                                              <th className="px-3 py-2 text-left">Month</th>
+                                              <th className="px-3 py-2 text-left">Sales</th>
+                                              <th className="px-3 py-2 text-left">Costs</th>
+                                              <th className="px-3 py-2 text-left">Assumptions</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {financialForecasts.sales_and_costs_forecast.map((entry, index) => (
+                                              <tr key={index} className={index % 2 === 0 ? 'bg-neuro-bg/40' : ''}>
+                                                <td className="px-3 py-2 font-semibold text-neuro-primary">{entry.month_name}</td>
+                                                <td className="px-3 py-2">{`$${entry.sales_forecast.toLocaleString()}`}</td>
+                                                <td className="px-3 py-2">{`$${entry.costs_forecast.toLocaleString()}`}</td>
+                                                <td className="px-3 py-2">{entry.assumptions || '—'}</td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm italic neuro-text-secondary">No sales forecast provided.</p>
+                                    )}
+                                  </div>
+
+                                  <div className="grid lg:grid-cols-2 gap-6">
+                                    <div className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary">
+                                      <h6 className="font-semibold text-neuro-primary mb-2">Personal survival budget</h6>
+                                      <div className="mb-3">
+                                        <p className="font-semibold text-neuro-primary">Costs</p>
+                                        <ul className="list-disc list-inside space-y-1 mt-1">
+                                          {financialForecasts.personal_survival_budget.costs.map((item, index) => (
+                                            <li key={index}>
+                                              <span className="font-semibold">{item.category}:</span>{' '}
+                                              {`$${item.monthly_cost.toLocaleString()}`}/mo
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                      <div>
+                                        <p className="font-semibold text-neuro-primary">Income</p>
+                                        <ul className="list-disc list-inside space-y-1 mt-1">
+                                          {financialForecasts.personal_survival_budget.income.map((item, index) => (
+                                            <li key={index}>
+                                              <span className="font-semibold">{item.source}:</span>{' '}
+                                              {`$${item.monthly_amount.toLocaleString()}`}/mo
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    </div>
+
+                                    <div className="neuro-surface p-4 rounded-neuro text-sm neuro-text-secondary">
+                                      <h6 className="font-semibold text-neuro-primary mb-2">Cashflow forecast</h6>
+                                      {financialForecasts.cashflow_forecast?.length ? (
+                                        <div className="overflow-x-auto">
+                                          <table className="min-w-full text-sm">
+                                            <thead className="text-neuro-primary">
+                                              <tr>
+                                                <th className="px-3 py-2 text-left">Month</th>
+                                                <th className="px-3 py-2 text-left">Money in</th>
+                                                <th className="px-3 py-2 text-left">Money out</th>
+                                                <th className="px-3 py-2 text-left">Closing balance</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {financialForecasts.cashflow_forecast.map((entry, index) => (
+                                                <tr key={index} className={index % 2 === 0 ? 'bg-neuro-bg/40' : ''}>
+                                                  <td className="px-3 py-2 font-semibold text-neuro-primary">{entry.month_name}</td>
+                                                  <td className="px-3 py-2">{`$${entry.money_in.total.toLocaleString()}`}</td>
+                                                  <td className="px-3 py-2">{`$${entry.money_out.total.toLocaleString()}`}</td>
+                                                  <td className="px-3 py-2">{entry.closing_balance != null ? `$${entry.closing_balance.toLocaleString()}` : '—'}</td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm italic">No cashflow forecast provided.</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Startup costs</h6>
+                                    {financialForecasts.startup_costs_table?.length ? (
+                                      <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm neuro-text-secondary">
+                                          <thead className="text-neuro-primary">
+                                            <tr>
+                                              <th className="px-3 py-2 text-left">Item</th>
+                                              <th className="px-3 py-2 text-left">Calculation</th>
+                                              <th className="px-3 py-2 text-left">Total cost</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {financialForecasts.startup_costs_table.map((entry, index) => (
+                                              <tr key={index} className={index % 2 === 0 ? 'bg-neuro-bg/40' : ''}>
+                                                <td className="px-3 py-2 font-semibold text-neuro-primary">{entry.item}</td>
+                                                <td className="px-3 py-2">{entry.calculation}</td>
+                                                  <td className="px-3 py-2">{`$${entry.total_cost.toLocaleString()}`}</td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm italic neuro-text-secondary">No startup costs itemized.</p>
+                                    )}
+                                  </div>
+                                </div>
                               ) : (
-                                <p className="text-sm neuro-text-secondary italic">No GTM notes provided.</p>
+                                <p className="text-sm italic neuro-text-secondary">Financial forecasts not provided.</p>
                               )}
                             </div>
+
+                            <div className="grid lg:grid-cols-2 gap-6">
+                              <div className="neuro-inset p-6 rounded-neuro space-y-3">
+                                <h5 className="font-bold neuro-text-primary">Backup Plan</h5>
+                                <div className="text-sm neuro-text-secondary space-y-2">
+                                  {backupPlan?.short_term_plan && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Short-term plan:</span>
+                                      <p className="mt-1">{backupPlan.short_term_plan}</p>
+                                    </div>
+                                  )}
+                                  {backupPlan?.long_term_plan && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Long-term plan:</span>
+                                      <p className="mt-1">{backupPlan.long_term_plan}</p>
+                                    </div>
+                                  )}
+                                  {backupPlan?.plan_b && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Plan B:</span>
+                                      <p className="mt-1">{backupPlan.plan_b}</p>
+                                    </div>
+                                  )}
+                                  {backupPlan?.plan_b_additional && (
+                                    <div>
+                                      <span className="font-semibold text-neuro-primary">Additional Plan B details:</span>
+                                      <p className="mt-1">{backupPlan.plan_b_additional}</p>
+                                    </div>
+                                  )}
+                                  {!backupPlan && <p className="text-sm italic">No backup plan provided.</p>}
+                                </div>
+                              </div>
+
+                              <div className="neuro-inset p-6 rounded-neuro">
+                                <h5 className="font-bold neuro-text-primary mb-3">Full JSON Export</h5>
+                                <p className="text-sm neuro-text-secondary mb-3">
+                                  Copy this JSON to share the plan or validate it with third-party tools.
+                                </p>
+                                <div className="neuro-surface p-4 rounded-neuro max-h-80 overflow-auto text-xs font-mono text-left whitespace-pre-wrap">
+                                  {JSON.stringify(businessPlan, null, 2)}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <p className="text-sm neuro-text-secondary italic">Business plan not available.</p>
+                        )}
                       </div>
                     </div>
                   </div>
