@@ -201,7 +201,7 @@ export const EntrepreneurFoundations: React.FC = () => {
                 className="neuro-button-primary flex items-center justify-center gap-2 px-6 py-3 rounded-neuro"
               >
                 <ArrowRight className="w-5 h-5" />
-                <span>Continue to SkillCraft Entrepreneurship Tasks</span>
+                <span>Continue to SkillCraft </span>
               </button>
             </div>
           </div>
