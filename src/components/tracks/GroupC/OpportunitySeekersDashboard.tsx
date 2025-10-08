@@ -41,7 +41,7 @@ type GoalSettingForm = {
 
 const opportunitySeekersSteps: ProgressStep[] = [
   { id: 'skillcraft-wage-employment', label: 'Skillcraft Wage Employment Tasks', completed: false, current: true },
-  { id: 'goal-setting', label: 'Goal Setting', completed: false, current: false },
+  { id: 'goal-setting', label: 'Scope the Idea', completed: false, current: false },
   { id: 'ai-training-plan', label: 'Gen AI Custom Training Plan + WOOP Report', completed: false, current: false },
   { id: 'job-search-strategies', label: 'Job Search Strategies', completed: false, current: false },
   { id: 'networking', label: 'Networking', completed: false, current: false }
@@ -316,7 +316,7 @@ export const OpportunitySeekersDashboard: React.FC = () => {
                       onClick={() => completeStep('skillcraft-wage-employment', 'goal-setting')}
                       className="neuro-button-primary inline-flex items-center px-10 py-5 text-xl rounded-neuro-lg hover:scale-105 transition-all duration-300"
                     >
-                      <span>Continue to Goal Setting</span>
+                      <span>Continue to Scope the Idea</span>
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </button>
                   </div>
@@ -334,7 +334,7 @@ export const OpportunitySeekersDashboard: React.FC = () => {
                 <div className="w-24 h-24 neuro-icon mx-auto mb-6 bg-gradient-to-br from-neuro-secondary to-pink-400 neuro-animate-float">
                   <Target className="w-10 h-10 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold neuro-text-primary mb-4">Goal Setting: Business Idea & Time Commitment</h2>
+                <h2 className="text-3xl font-bold neuro-text-primary mb-4">Scope the Idea: Business Idea & Time Commitment</h2>
                 <p className="text-lg neuro-text-secondary">
                   Define your career transition goals and time investment for optimal results.
                 </p>

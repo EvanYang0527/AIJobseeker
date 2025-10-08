@@ -46,7 +46,7 @@ export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
         <div className="w-20 h-20 neuro-icon mx-auto mb-6">
           <Target className="w-10 h-10 text-neuro-primary" />
         </div>
-        <h2 className="text-2xl font-bold neuro-text-primary text-center mb-4">Goal Setting</h2>
+        <h2 className="text-2xl font-bold neuro-text-primary text-center mb-4">Scope the idea</h2>
         <p className="neuro-text-secondary text-center max-w-2xl mx-auto">
           Tell us about your business goals and aspirations. Sarah, your AI companion, will help guide you through this process.
         </p>

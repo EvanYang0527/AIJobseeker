@@ -41,7 +41,7 @@ import {
 const entrepreneurSteps: ProgressStep[] = [
   { id: 'skillcraft-entrepreneurship-tasks', label: 'SkillCraft Entrepreneurship Tasks', completed: false, current: true },
   { id: 'assessment-questionnaire', label: 'Assessment Questionnaire', completed: false, current: false },
-  { id: 'goal-setting', label: 'Goal Setting', completed: false, current: false },
+  { id: 'goal-setting', label: 'Scope the Idea', completed: false, current: false },
   { id: 'business-plan-creation', label: 'Business Plan Creation', completed: false, current: false },
   { id: 'learning-plan-recommendations', label: 'Learning Course Recommendations', completed: false, current: false },
   { id: 'ai-mentor-program', label: 'AI Mentor Program', completed: false, current: false },
@@ -293,7 +293,7 @@ const buildWoopIntakePrompt = (user: User | null) => {
     `Phone number: ${formatPromptValue(user?.phoneNumber)}`,
     `Selected track: ${formatPromptValue(user?.selectedTrack)}`,
     '',
-    'GOAL SETTING RESPONSES',
+    'Scope the Idea RESPONSES',
     `Business idea summary: ${formatPromptValue(businessIdeaValue)}`,
     `Business category: ${formatPromptValue(businessCategoryValue)}`,
     `Relevant experience in years: ${formatPromptValue(experienceYearsValue)}`,
@@ -321,7 +321,7 @@ const buildWoopIntakePrompt = (user: User | null) => {
   if (goalSettingData) {
     goalSettingLinesSections.push(
       '',
-      'EXTENDED GOAL SETTING (Opportunity Track)',
+      'Scope the Idea (Opportunity Track)',
       `Business idea or career vision: ${formatPromptValue(goalSettingData.businessIdea)}`,
       `Time commitment: ${formatPromptValue(goalSettingData.timeCommitment)}`,
       `Career goals: ${formatPromptValue(goalSettingData.careerGoals)}`,
@@ -1163,7 +1163,7 @@ export const EntrepreneurDashboard: React.FC = () => {
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="neuro-inset p-5 rounded-neuro space-y-3">
-                        <h4 className="font-semibold neuro-text-primary">Goal Setting</h4>
+                        <h4 className="font-semibold neuro-text-primary">Scope the Idea</h4>
                         <div className="text-sm neuro-text-secondary space-y-2">
                           <div>
                             <span className="font-semibold text-neuro-primary">Primary goal:</span>{' '}

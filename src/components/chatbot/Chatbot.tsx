@@ -45,10 +45,10 @@ export const Chatbot: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="w-12 h-12 neuro-icon mr-3">
-                  <span className="font-bold neuro-text-primary">S</span>
+                  <span className="font-bold neuro-text-primary">L</span>
                 </div>
                 <div>
-                  <h3 className="font-bold neuro-text-primary">Sarah</h3>
+                  <h3 className="font-bold neuro-text-primary">Lumina</h3>
                   <p className="text-sm neuro-text-secondary">AI Career Companion</p>
                 </div>
               </div>

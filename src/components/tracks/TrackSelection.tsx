@@ -41,7 +41,7 @@ const trackFeatures = {
   entrepreneurship: [
     'SkillsCraft cognitive assessment results',
     'Questions about user\'s prior experience',
-    'Goal setting (business idea, time commitment)',
+    'Scope the Idea (business idea, time commitment)',
     'WOOP Report with AI-based custom training plan',
     'AI Mentor Program for ongoing guidance',
     'Comprehensive business launch support'
@@ -190,7 +190,7 @@ export const TrackSelection: React.FC = () => {
               className="neuro-button-primary inline-flex items-center px-8 py-4 text-xl rounded-neuro"
             >
               <HelpCircle className="w-6 h-6 mr-3" />
-              <span>Start Career Assessment</span>
+              <span>Start Assessment</span>
               <ArrowRight className="w-5 h-5 ml-2" />
             </button>
           </div>
@@ -211,16 +211,16 @@ export const TrackSelection: React.FC = () => {
         </div>
 
         {/* Track Selection */}
-        <div className="text-center mb-8">
+        {/* <div className="text-center mb-8">
           <div className="neuro-inset p-6 rounded-neuro mb-6">
             <h3 className="text-2xl font-bold neuro-text-primary mb-2">Self Select Option</h3>
             <p className="neuro-text-secondary">Already know which track is right for you? Choose directly below.</p>
           </div>
-        </div>
+        </div> */}
 
         <div className="flex justify-center mb-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
-            {trackOptions.map((track, index) => {
+            {/* {trackOptions.map((track, index) => {
               const Icon = icons[track.id];
               const features = trackFeatures[track.id];
               const metrics = trackMetrics[track.id];
@@ -255,14 +255,13 @@ export const TrackSelection: React.FC = () => {
                     {track.description}
                   </p>
 
-                  {/* Call to Action Button */}
                   <button className="w-3/4 mx-auto neuro-button-primary mt-auto py-4 rounded-neuro-lg">
                     <span>Begin Journey</span>
                     <ArrowRight className="w-4 h-4 ml-2 inline-block" />
                   </button>
                 </div>
               );
-            })}
+            })} */}
           </div>
         </div>
 
@@ -292,7 +291,7 @@ export const TrackSelection: React.FC = () => {
         <div className="text-center neuro-card">
           <h3 className="font-bold neuro-text-primary mb-4 text-2xl">Not Sure Which Track?</h3>
           <p className="neuro-text-secondary mb-6 max-w-2xl mx-auto">
-            Our career assessment analyzes your skills and goals to provide personalized track recommendations.
+            Our assessment analyzes your skills and goals to provide personalized track recommendations.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
