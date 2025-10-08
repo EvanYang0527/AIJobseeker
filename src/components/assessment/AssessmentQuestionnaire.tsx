@@ -1,19 +1,39 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle, ArrowRight, ArrowLeft, Target, Briefcase, TrendingUp, Award, HelpCircle, Star, Lightbulb } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  CheckCircle,
+  HelpCircle,
+  Lightbulb,
+  Star,
+  Target
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-interface Question {
+type QuestionId = 'main_goal' | 'job_clarity' | 'business_idea';
+
+type TrackKey =
+  | 'career-exploration'
+  | 'pathfinder'
+  | 'opportunity-seekers'
+  | 'workforce-ready'
+  | 'entrepreneur';
+
+interface QuestionOption {
   id: string;
   text: string;
-  type: 'single' | 'multiple';
-  options: {
-    id: string;
-    text: string;
-    weight: {
-      entrepreneurship?: number;
-      'wage-employment'?: number;
-    };
-  }[];
+  description?: string;
+  nextQuestionId?: QuestionId;
+  result?: {
+    track: TrackKey;
+    route: string;
+  };
+}
+
+interface Question {
+  id: QuestionId;
+  text: string;
+  options: QuestionOption[];
 }
 
 interface AssessmentQuestionnaireProps {
@@ -21,188 +41,76 @@ interface AssessmentQuestionnaireProps {
   onBack: () => void;
 }
 
-const questions: Question[] = [
-  {
-    id: 'career_goal',
-    text: 'What best describes your primary career goal?',
-    type: 'single',
+const questionMap: Record<QuestionId, Question> = {
+  main_goal: {
+    id: 'main_goal',
+    text: 'What is your main goal?',
     options: [
       {
+        id: 'explore_strengths',
+        text: "Explore what I'm good at",
+        result: { track: 'career-exploration', route: '/career-exploration' }
+      },
+      {
         id: 'start_business',
-        text: 'Start my own business or become an entrepreneur',
-        weight: { entrepreneurship: 10 }
+        text: 'Start or grow a business',
+        nextQuestionId: 'business_idea'
       },
       {
         id: 'find_job',
-        text: 'Find a good job with a stable company',
-        weight: { 'wage-employment': 8 }
-      },
-      {
-        id: 'advance_career',
-        text: 'Advance in my current career path',
-        weight: { 'wage-employment': 10 }
-      },
-      {
-        id: 'executive_role',
-        text: 'Transition to senior executive or leadership role',
-        weight: { 'wage-employment': 10 }
+        text: 'Find a job',
+        nextQuestionId: 'job_clarity'
       }
     ]
   },
-  {
-    id: 'experience_level',
-    text: 'How would you describe your professional experience?',
-    type: 'single',
+  job_clarity: {
+    id: 'job_clarity',
+    text: 'How clear are you about the job you want?',
     options: [
       {
-        id: 'new_graduate',
-        text: 'Recent graduate or new to the workforce',
-        weight: { 'wage-employment': 10 }
+        id: 'ready_to_apply',
+        text: 'Ready to apply',
+        description: 'You know the job you want and are prepared to submit applications.',
+        result: { track: 'workforce-ready', route: '/workforce-ready/dashboard' }
       },
       {
-        id: 'some_experience',
-        text: '1-3 years of professional experience',
-        weight: { 'wage-employment': 8, entrepreneurship: 5 }
+        id: 'somewhat_clear',
+        text: 'Somewhat clear',
+        description: 'You have some direction but would like to sharpen your skills and plan.',
+        result: { track: 'opportunity-seekers', route: '/opportunity-seekers/dashboard' }
       },
       {
-        id: 'experienced',
-        text: '4-10 years of professional experience',
-        weight: { 'wage-employment': 10, entrepreneurship: 8 }
-      },
-      {
-        id: 'senior_professional',
-        text: '10+ years with leadership experience',
-        weight: { 'wage-employment': 10, entrepreneurship: 9 }
+        id: 'not_clear',
+        text: 'Not clear',
+        description: 'You need help understanding your strengths and potential career paths.',
+        result: { track: 'pathfinder', route: '/pathfinder/dashboard' }
       }
     ]
   },
-  {
-    id: 'risk_tolerance',
-    text: 'How comfortable are you with taking risks?',
-    type: 'single',
+  business_idea: {
+    id: 'business_idea',
+    text: 'Do you already have a business idea?',
     options: [
       {
-        id: 'risk_averse',
-        text: 'I prefer stability and predictable outcomes',
-        weight: { 'wage-employment': 8 }
+        id: 'idea_ready',
+        text: 'Yes, I have one',
+        result: { track: 'entrepreneur', route: '/entrepreneur/dashboard' }
       },
       {
-        id: 'moderate_risk',
-        text: 'I\'m comfortable with some calculated risks',
-        weight: { 'wage-employment': 10, entrepreneurship: 5 }
-      },
-      {
-        id: 'high_risk',
-        text: 'I thrive on high-risk, high-reward opportunities',
-        weight: { entrepreneurship: 10, 'wage-employment': 5 }
-      },
-      {
-        id: 'very_high_risk',
-        text: 'I love uncertainty and creating something from nothing',
-        weight: { entrepreneurship: 10 }
+        id: 'need_help',
+        text: 'No, need help to start',
+        result: { track: 'entrepreneur', route: '/entrepreneur/dashboard' }
       }
     ]
-  },
-  {
-    id: 'leadership_style',
-    text: 'Which statement best describes your preferred working style?',
-    type: 'single',
-    options: [
-      {
-        id: 'team_player',
-        text: 'I prefer working as part of a team with clear guidance',
-        weight: { 'wage-employment': 10 }
-      },
-      {
-        id: 'independent_contributor',
-        text: 'I work best independently with minimal supervision',
-        weight: { 'wage-employment': 10, entrepreneurship: 8 }
-      },
-      {
-        id: 'team_leader',
-        text: 'I enjoy leading teams and managing projects',
-        weight: { 'wage-employment': 8, entrepreneurship: 9 }
-      },
-      {
-        id: 'visionary_leader',
-        text: 'I love creating vision and building organizations from scratch',
-        weight: { entrepreneurship: 10, 'wage-employment': 5 }
-      }
-    ]
-  },
-  {
-    id: 'industry_interest',
-    text: 'What type of work environment appeals to you most?',
-    type: 'single',
-    options: [
-      {
-        id: 'established_company',
-        text: 'Established company with clear processes and benefits',
-        weight: { 'wage-employment': 10 }
-      },
-      {
-        id: 'growing_company',
-        text: 'Growing company where I can advance quickly',
-        weight: { 'wage-employment': 10 }
-      },
-      {
-        id: 'startup_environment',
-        text: 'Fast-paced startup or innovative company',
-        weight: { entrepreneurship: 8, 'wage-employment': 8 }
-      },
-      {
-        id: 'own_venture',
-        text: 'My own business where I control everything',
-        weight: { entrepreneurship: 10 }
-      }
-    ]
-  },
-  {
-    id: 'financial_goals',
-    text: 'What are your financial expectations?',
-    type: 'single',
-    options: [
-      {
-        id: 'stable_income',
-        text: 'Steady, predictable income with good benefits',
-        weight: { 'wage-employment': 10 }
-      },
-      {
-        id: 'growing_salary',
-        text: 'Gradually increasing salary with career progression',
-        weight: { 'wage-employment': 10 }
-      },
-      {
-        id: 'high_compensation',
-        text: 'High compensation commensurate with expertise',
-        weight: { 'wage-employment': 10 }
-      },
-      {
-        id: 'unlimited_potential',
-        text: 'Unlimited earning potential, willing to sacrifice short-term',
-        weight: { entrepreneurship: 10 }
-      }
-    ]
-  }
-];
-
-const trackInfo = {
-  entrepreneurship: {
-    title: 'Entrepreneurship Track',
-    description: 'Business launch pathway with mentorship, funding strategies, and networking',
-    color: 'secondary',
-    icon: Target
-  },
-  'wage-employment': {
-    title: 'Wage Employment Track',
-    description: 'Comprehensive employment pathway with skills assessment and job placement',
-    color: 'primary',
-    icon: Briefcase
   }
 };
 
+const longestPathLength = 2; // maximum number of steps in the branching questionnaire
+
 export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = ({ onComplete, onBack }) => {
+  const navigate = useNavigate();
   const { user, updateUser } = useAuth();
+
   const savedAnswers = useMemo(() => {
     const existing = user?.profile?.assessmentResponses;
     if (existing && typeof existing === 'object') {
@@ -211,24 +119,15 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
     return {};
   }, [user?.profile?.assessmentResponses]);
 
-  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>(savedAnswers);
-  const [showResults, setShowResults] = useState(false);
-  const [recommendation, setRecommendation] = useState<{track: string; confidence: number} | null>(null);
+  const [currentQuestionId, setCurrentQuestionId] = useState<QuestionId>('main_goal');
+  const [history, setHistory] = useState<QuestionId[]>([]);
 
   useEffect(() => {
     setAnswers(savedAnswers);
-    if (Object.keys(savedAnswers).length > 0) {
-      const firstIncompleteIndex = questions.findIndex(question => !savedAnswers[question.id]);
-      if (firstIncompleteIndex === -1) {
-        setCurrentQuestion(questions.length - 1);
-      } else {
-        setCurrentQuestion(firstIncompleteIndex);
-      }
-    }
   }, [savedAnswers]);
 
-  const persistAssessmentData = (nextAnswers: Record<string, string>, track?: string, confidence?: number) => {
+  const persistAssessmentData = (nextAnswers: Record<string, string>, track?: TrackKey, confidence?: number) => {
     updateUser({
       profile: {
         ...user?.profile,
@@ -241,180 +140,126 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
     });
   };
 
-  const handleAnswer = (questionId: string, optionId: string) => {
+  const applyTrackSelection = (track: TrackKey, nextAnswers: Record<string, string>) => {
+    const baseProfile = {
+      ...user?.profile,
+      assessmentResponses: nextAnswers,
+      assessmentRecommendation: { track, confidence: 100 }
+    };
+
+    switch (track) {
+      case 'pathfinder':
+        updateUser({
+          selectedTrack: 'pathfinder',
+          profile: {
+            ...baseProfile,
+            careerLevel: 'entry'
+          },
+          progress: {
+            currentStep: 0,
+            completedSteps: ['career-assessment', 'track-recommendation', 'wage-employment-selection'],
+            currentProgressBar: 1
+          }
+        });
+        break;
+      case 'opportunity-seekers':
+        updateUser({
+          selectedTrack: 'opportunity-seekers',
+          profile: {
+            ...baseProfile,
+            careerLevel: 'mid'
+          },
+          progress: {
+            currentStep: 0,
+            completedSteps: ['career-assessment', 'track-recommendation', 'wage-employment-selection'],
+            currentProgressBar: 2
+          }
+        });
+        break;
+      case 'workforce-ready':
+        updateUser({
+          selectedTrack: 'workforce-ready',
+          profile: {
+            ...baseProfile,
+            careerLevel: 'advanced'
+          },
+          progress: {
+            currentStep: 0,
+            completedSteps: ['career-assessment', 'track-recommendation', 'wage-employment-selection'],
+            currentProgressBar: 3
+          }
+        });
+        break;
+      case 'entrepreneur':
+        updateUser({
+          selectedTrack: 'entrepreneur',
+          profile: {
+            ...baseProfile,
+            careerLevel: 'advanced'
+          },
+          progress: {
+            currentStep: 0,
+            completedSteps: ['career-assessment']
+          }
+        });
+        break;
+      case 'career-exploration':
+      default:
+        updateUser({
+          selectedTrack: 'career-exploration',
+          profile: {
+            ...baseProfile,
+            careerLevel: 'entry'
+          },
+          progress: {
+            currentStep: 0,
+            completedSteps: ['career-assessment']
+          }
+        });
+        break;
+    }
+  };
+
+  const handleOptionSelect = (questionId: QuestionId, option: QuestionOption) => {
     setAnswers(prev => {
-      const updatedAnswers = { ...prev, [questionId]: optionId };
+      const updatedAnswers = { ...prev, [questionId]: option.id };
       persistAssessmentData(updatedAnswers);
+
+      if (option.result) {
+        const { track, route } = option.result;
+        persistAssessmentData(updatedAnswers, track, 100);
+        applyTrackSelection(track, updatedAnswers);
+        onComplete(track, 100);
+        if (route.startsWith('http')) {
+          window.location.href = route;
+        } else {
+          navigate(route);
+        }
+      } else if (option.nextQuestionId) {
+        setHistory(prevHistory => [...prevHistory, questionId]);
+        setCurrentQuestionId(option.nextQuestionId);
+      }
+
       return updatedAnswers;
     });
   };
 
-  const calculateRecommendation = () => {
-    const scores = {
-      entrepreneurship: 0,
-      'wage-employment': 0
-    };
-
-    // Calculate weighted scores based on answers
-    Object.entries(answers).forEach(([questionId, optionId]) => {
-      const question = questions.find(q => q.id === questionId);
-      const option = question?.options.find(opt => opt.id === optionId);
-      
-      if (option?.weight) {
-        Object.entries(option.weight).forEach(([track, weight]) => {
-          scores[track as keyof typeof scores] += weight || 0;
-        });
+  const handlePrevious = () => {
+    setHistory(prevHistory => {
+      if (prevHistory.length === 0) {
+        onBack();
+        return prevHistory;
       }
+
+      const newHistory = [...prevHistory];
+      const previousQuestionId = newHistory.pop() || 'main_goal';
+      setCurrentQuestionId(previousQuestionId);
+      return newHistory;
     });
-
-    // Find the track with highest score
-    const maxScore = Math.max(...Object.values(scores));
-    const recommendedTrack = Object.entries(scores).find(([_, score]) => score === maxScore)?.[0];
-    
-    // Calculate confidence based on score distribution
-    const totalScore = Object.values(scores).reduce((sum, score) => sum + score, 0);
-    const confidence = Math.round((maxScore / totalScore) * 100);
-
-    return { track: recommendedTrack || 'wage-employment', confidence };
   };
 
-  const nextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      const result = calculateRecommendation();
-      persistAssessmentData(answers, result.track, result.confidence);
-      setRecommendation(result);
-      // Navigate to track recommendation page
-      window.location.href = `/track-recommendation?track=${result.track}&confidence=${result.confidence}`;
-    }
-  };
-
-  const previousQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
-  };
-
-  const handleCompleteAssessment = (selectedTrack?: string) => {
-    const finalTrack = selectedTrack || recommendation?.track || 'wage-employment';
-    const finalConfidence = recommendation?.confidence || 75;
-
-    persistAssessmentData(answers, finalTrack, finalConfidence);
-
-    // Navigate to track recommendation page with results
-    window.location.href = `/track-recommendation?track=${finalTrack}&confidence=${finalConfidence}`;
-  };
-
-  if (showResults && recommendation) {
-    const recommendedTrackInfo = trackInfo[recommendation.track as keyof typeof trackInfo];
-    const Icon = recommendedTrackInfo.icon;
-    
-    return (
-      <div className="min-h-screen bg-neuro-bg px-4 py-8 relative overflow-hidden">
-        {/* Floating decorative elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-20 left-20 w-12 h-12 neuro-icon neuro-animate-float">
-            <Star className="w-6 h-6 text-neuro-primary" />
-          </div>
-          <div className="absolute top-40 right-32 w-16 h-16 neuro-icon neuro-animate-float" style={{ animationDelay: '1s' }}>
-            <Lightbulb className="w-8 h-8 text-neuro-secondary" />
-          </div>
-        </div>
-
-        <div className="max-w-4xl mx-auto relative z-10">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 neuro-icon mx-auto mb-4">
-              <Target className="w-10 h-10 text-neuro-primary" />
-            </div>
-            <h1 className="text-4xl font-bold neuro-text-primary mb-2">Assessment Complete!</h1>
-            <p className="text-lg neuro-text-secondary max-w-2xl mx-auto">
-              Based on your responses, we've identified the best career track for your goals and experience level.
-            </p>
-          </div>
-
-          {/* Recommended Track */}
-          <div className="neuro-card mb-8">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold neuro-text-primary mb-2">Recommended Track</h2>
-              <div className="flex items-center justify-center mb-4">
-                <div className="text-3xl font-bold text-neuro-primary mr-2">{recommendation.confidence}%</div>
-                <div className="neuro-text-secondary">match confidence</div>
-              </div>
-            </div>
-
-            <div className="neuro-surface p-6 rounded-neuro-lg mb-6">
-              <div className="flex items-center mb-4">
-                <div className="w-16 h-16 neuro-icon mr-4">
-                  <Icon className="w-8 h-8 text-neuro-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold neuro-text-primary">{recommendedTrackInfo.title}</h3>
-                  <p className="neuro-text-secondary">{recommendedTrackInfo.description}</p>
-                </div>
-              </div>
-              
-              <button
-                onClick={() => handleCompleteAssessment()}
-                className="w-full neuro-button-primary"
-              >
-                Start This Track <ArrowRight className="w-5 h-5 ml-2 inline-block" />
-              </button>
-            </div>
-          </div>
-
-          {/* Alternative Tracks */}
-          <div className="neuro-card mb-8">
-            <h3 className="text-xl font-bold neuro-text-primary mb-4 text-center">
-              Or Choose a Different Track
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {Object.entries(trackInfo)
-                .filter(([key]) => key !== recommendation.track)
-                .map(([key, track]) => {
-                  const TrackIcon = track.icon;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => handleCompleteAssessment(key)}
-                      className="neuro-surface p-4 rounded-neuro hover:shadow-neuro-hover transition-all duration-200"
-                    >
-                      <div className="flex items-center mb-3">
-                        <div className="w-12 h-12 neuro-icon mr-4">
-                          <TrackIcon className="w-6 h-6 text-neuro-primary" />
-                        </div>
-                        <div className="text-left">
-                          <h4 className="font-semibold neuro-text-primary">
-                            {track.title}
-                          </h4>
-                        </div>
-                      </div>
-                      <p className="text-sm neuro-text-secondary text-left">
-                        {track.description}
-                      </p>
-                    </button>
-                  );
-                })}
-            </div>
-          </div>
-
-          {/* Back Button */}
-          <div className="text-center">
-            <button
-              onClick={onBack}
-              className="neuro-button flex items-center mx-auto"
-            >
-              ← Back to Track Selection
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const currentQ = questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const currentQuestion = questionMap[currentQuestionId];
+  const progress = Math.min(((history.length + 1) / longestPathLength) * 100, 100);
 
   return (
     <div className="min-h-screen bg-neuro-bg px-4 py-8 relative overflow-hidden">
@@ -436,14 +281,14 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
           </div>
           <h1 className="text-3xl font-bold neuro-text-primary mb-2">Career Assessment</h1>
           <p className="neuro-text-secondary">
-            Question {currentQuestion + 1} of {questions.length}
+            Step {history.length + 1} of {longestPathLength}
           </p>
         </div>
 
         {/* Progress Bar */}
         <div className="neuro-card mb-8">
           <div className="neuro-progress-track mb-4">
-            <div 
+            <div
               className="neuro-progress-fill transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
@@ -455,32 +300,35 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
 
         {/* Question Card */}
         <div className="neuro-card mb-8">
-          <h2 className="text-xl font-bold neuro-text-primary mb-6">
-            {currentQ.text}
-          </h2>
+          <h2 className="text-xl font-bold neuro-text-primary mb-6">{currentQuestion.text}</h2>
 
           <div className="space-y-4">
-            {currentQ.options.map((option, index) => (
+            {currentQuestion.options.map(option => (
               <button
                 key={option.id}
-                onClick={() => handleAnswer(currentQ.id, option.id)}
+                onClick={() => handleOptionSelect(currentQuestion.id, option)}
                 className={`w-full p-4 text-left rounded-neuro transition-all duration-200 ${
-                  answers[currentQ.id] === option.id
+                  answers[currentQuestion.id] === option.id
                     ? 'neuro-inset bg-gradient-to-r from-neuro-primary/10 to-neuro-primary-light/10'
                     : 'neuro-surface hover:shadow-neuro-hover'
                 }`}
               >
-                <div className="flex items-center">
-                  <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center transition-all duration-200 ${
-                    answers[currentQ.id] === option.id
-                      ? 'bg-gradient-to-br from-neuro-primary to-neuro-primary-light text-white shadow-neuro-primary'
-                      : 'neuro-surface neuro-text-muted'
-                  }`}>
-                    {answers[currentQ.id] === option.id && (
-                      <CheckCircle className="w-4 h-4" />
+                <div className="flex items-start">
+                  <div
+                    className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center transition-all duration-200 ${
+                      answers[currentQuestion.id] === option.id
+                        ? 'bg-gradient-to-br from-neuro-primary to-neuro-primary-light text-white shadow-neuro-primary'
+                        : 'neuro-surface neuro-text-muted'
+                    }`}
+                  >
+                    {answers[currentQuestion.id] === option.id && <CheckCircle className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <div className="font-semibold neuro-text-primary">{option.text}</div>
+                    {option.description && (
+                      <p className="text-sm neuro-text-secondary mt-1">{option.description}</p>
                     )}
                   </div>
-                  <span className="font-semibold neuro-text-primary">{option.text}</span>
                 </div>
               </button>
             ))}
@@ -489,22 +337,17 @@ export const AssessmentQuestionnaire: React.FC<AssessmentQuestionnaireProps> = (
 
         {/* Navigation */}
         <div className="flex justify-between items-center">
-          <button
-            onClick={currentQuestion === 0 ? onBack : previousQuestion}
-            className="neuro-button flex items-center"
-          >
+          <button onClick={handlePrevious} className="neuro-button flex items-center">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {currentQuestion === 0 ? 'Back to Selection' : 'Previous'}
+            {history.length === 0 ? 'Back to Selection' : 'Previous'}
           </button>
 
-          <button
-            onClick={nextQuestion}
-            disabled={!answers[currentQ.id]}
-            className="neuro-button-primary inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed py-4 px-8 rounded-neuro-lg"
-          >
-            {currentQuestion === questions.length - 1 ? 'Get Results' : 'Next'}
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </button>
+          <div className="neuro-surface px-4 py-2 rounded-neuro flex items-center space-x-2">
+            <Target className="w-4 h-4 text-neuro-primary" />
+            <span className="text-sm neuro-text-secondary">
+              Choose an option above to continue
+            </span>
+          </div>
         </div>
       </div>
     </div>

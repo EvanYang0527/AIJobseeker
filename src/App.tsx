@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { Login } from './components/auth/Login';
@@ -14,6 +14,7 @@ import { OpportunitySeekersDashboard } from './components/tracks/GroupC/Opportun
 import { WorkforceReadyDashboard } from './components/tracks/GroupC/WorkforceReadyDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AssessmentQuestionnaire } from './components/assessment/AssessmentQuestionnaire';
+import { CareerExplorationLanding } from './components/assessment/CareerExplorationLanding';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -35,6 +36,7 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 const AppRoutes: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   return (
@@ -44,9 +46,28 @@ const AppRoutes: React.FC = () => {
       
       <Route path="/career-assessment" element={
         <PrivateRoute>
-          <AssessmentQuestionnaire 
-            onComplete={(track, confidence) => {
-              window.location.href = `/track-recommendation?track=${track}&confidence=${confidence}`;
+          <AssessmentQuestionnaire
+            onComplete={(track) => {
+              switch (track) {
+                case 'career-exploration':
+                  navigate('/career-exploration');
+                  break;
+                case 'pathfinder':
+                  navigate('/pathfinder/dashboard');
+                  break;
+                case 'opportunity-seekers':
+                  navigate('/opportunity-seekers/dashboard');
+                  break;
+                case 'workforce-ready':
+                  navigate('/workforce-ready/dashboard');
+                  break;
+                case 'entrepreneur':
+                  navigate('/entrepreneur/dashboard');
+                  break;
+                default:
+                  navigate('/track-selection');
+                  break;
+              }
             }}
             onBack={() => navigate('/track-selection')}
           />
@@ -64,7 +85,13 @@ const AppRoutes: React.FC = () => {
           <TrackSelection />
         </PrivateRoute>
       } />
-      
+
+      <Route path="/career-exploration" element={
+        <PrivateRoute>
+          <CareerExplorationLanding />
+        </PrivateRoute>
+      } />
+
       <Route path="/wage-employment/selection" element={
         <PrivateRoute>
           <WageEmploymentSubSelection />
