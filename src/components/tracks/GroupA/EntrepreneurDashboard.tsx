@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
-import { BusinessDevelopmentIntake, LearningPlanRecommendation, ProgressStep, User, VentureStage } from '../../../types';
+import { BusinessDevelopmentIntake, LearningPlanRecommendation, User, VentureStage } from '../../../types';
 import { WoopIntakeSummary, WoopWish, WoopOutcome, WoopObstacles, WoopPlan } from '../../../types/woop';
 import { AzureChatMessage, callAzureChatCompletion, parseAzureJSON } from '../../../utils/azureOpenAI';
 import { AssessmentResults } from '../../assessment/AssessmentResults';
@@ -36,16 +37,7 @@ import {
   RefreshCw,
   Compass
 } from 'lucide-react';
-
-const entrepreneurSteps: ProgressStep[] = [
-  { id: 'skillcraft-entrepreneurship-tasks', label: 'SkillCraft Entrepreneurship Tasks', completed: false, current: true },
-  { id: 'assessment-questionnaire', label: 'Assessment & Idea Scope', completed: false, current: false },
-  { id: 'business-plan-creation', label: 'Business Plan Creation', completed: false, current: false },
-  { id: 'learning-plan-recommendations', label: 'Learning Course Recommendations', completed: false, current: false },
-  { id: 'ai-mentor-program', label: 'AI Mentor Program', completed: false, current: false },
-  { id: 'networking-funding', label: 'Networking and Funding Resources', completed: false, current: false },
-  { id: 'skills-passport-certificate', label: 'Skills Passport Certificate', completed: false, current: false }
-];
+import { entrepreneurSteps } from './entrepreneurSteps';
 
 const formatPromptValue = (value: unknown): string => {
   if (value === undefined || value === null) {
@@ -592,8 +584,10 @@ OUTPUT FORMAT:
 
 export const EntrepreneurDashboard: React.FC = () => {
   const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState('skillcraft-entrepreneurship-tasks');
   const [assessmentStarted, setAssessmentStarted] = useState(false);
+  const [hasAcknowledgedBusinessPlan, setHasAcknowledgedBusinessPlan] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     {
       id: '1',
@@ -980,6 +974,35 @@ export const EntrepreneurDashboard: React.FC = () => {
       case 'skillcraft-entrepreneurship-tasks':
         return (
           <div className="p-8 space-y-8 bg-neuro-bg">
+            {!hasAcknowledgedBusinessPlan && (
+              <div className="neuro-inset p-6 rounded-neuro-lg border border-neuro-primary/20">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold neuro-text-primary mb-2">
+                      Do you already have a business plan?
+                    </h3>
+                    <p className="neuro-text-secondary text-sm sm:text-base">
+                      If you&apos;re just getting started, we recommend reviewing a few foundational
+                      entrepreneurship courses before diving into SkillCraft tasks.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => setHasAcknowledgedBusinessPlan(true)}
+                      className="neuro-button flex-1 px-6 py-3 rounded-neuro"
+                    >
+                      Yes, let&apos;s continue
+                    </button>
+                    <button
+                      onClick={() => navigate('/entrepreneur/foundations')}
+                      className="neuro-button-primary flex-1 px-6 py-3 rounded-neuro"
+                    >
+                      No, show foundational learning
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="neuro-card hover:shadow-neuro-hover transition-all duration-300">
               <div className="text-center mb-8">
                 <div className="w-24 h-24 neuro-icon mx-auto mb-6 bg-gradient-to-br from-neuro-primary to-neuro-primary-light neuro-animate-float">
