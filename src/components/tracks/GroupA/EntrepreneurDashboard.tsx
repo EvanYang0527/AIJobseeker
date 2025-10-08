@@ -2585,6 +2585,60 @@ export const EntrepreneurDashboard: React.FC = () => {
 
               {/* Skills Passport Certificate */}
               <div className="neuro-inset p-8 rounded-neuro-lg mb-8 relative overflow-hidden">
+                <div className="grid md:grid-cols-3 gap-6 mb-8 text-left">
+                  <div className="neuro-surface rounded-neuro-md p-6">
+                    <h4 className="text-xl font-semibold neuro-text-primary mb-3">Courses Completed</h4>
+                    <ul className="space-y-2 neuro-text-secondary">
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-neuro-success" />
+                        <span>Market Research &amp; Opportunity Validation</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-neuro-success" />
+                        <span>Financial Modeling for Startups</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-neuro-success" />
+                        <span>Pitch Deck Design &amp; Storytelling</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="neuro-surface rounded-neuro-md p-6">
+                    <h4 className="text-xl font-semibold neuro-text-primary mb-3">Business Plan Summary</h4>
+                    <p className="neuro-text-secondary mb-2">
+                      <span className="font-semibold neuro-text-primary">Venture:</span> FreshLoop, a mobile marketplace connecting
+                      local farmers with urban consumers through subscription produce boxes.
+                    </p>
+                    <p className="neuro-text-secondary mb-2">
+                      <span className="font-semibold neuro-text-primary">Value Proposition:</span> Reduces food waste while providing
+                      affordable, sustainably sourced groceries to city residents.
+                    </p>
+                    <p className="neuro-text-secondary">
+                      <span className="font-semibold neuro-text-primary">Traction:</span> 250 pilot subscribers, 15 farm partners, and a
+                      92% customer satisfaction score.
+                    </p>
+                  </div>
+
+                  <div className="neuro-surface rounded-neuro-md p-6">
+                    <h4 className="text-xl font-semibold neuro-text-primary mb-3">Network &amp; Funding Resources</h4>
+                    <ul className="space-y-2 neuro-text-secondary">
+                      <li>
+                        <span className="font-semibold neuro-text-primary">Mentors:</span> Access to the GrowthHub Founders Circle and
+                        monthly strategy calls with industry experts.
+                      </li>
+                      <li>
+                        <span className="font-semibold neuro-text-primary">Funding Leads:</span> Shortlisted for the Green Cities Impact
+                        Fund and invited to pitch at the Metro Startup Showcase.
+                      </li>
+                      <li>
+                        <span className="font-semibold neuro-text-primary">Community:</span> Active participation in the City Innovators
+                        Network with 40+ peer founders.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
                 <div className="absolute top-4 right-4">
                   <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-warning to-yellow-400 border-4 border-neuro-success">
                     <Award className="w-8 h-8 text-white" />
