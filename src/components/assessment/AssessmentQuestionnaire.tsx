@@ -99,7 +99,7 @@ const questionMap: Record<QuestionId, Question> = {
       {
         id: 'need_help',
         text: 'No, need help to start',
-        result: { track: 'entrepreneur', route: '/entrepreneur/foundations' }
+        result: { track: 'entrepreneur', route: '/entrepreneur/dashboard' }
       }
     ]
   }
