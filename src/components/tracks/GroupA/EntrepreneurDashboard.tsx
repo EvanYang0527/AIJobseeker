@@ -1277,8 +1277,7 @@ export const EntrepreneurDashboard: React.FC = () => {
       const runStep = async <T,>(prompt: string, label: string, maxTokens?: number) => {
         const messages: AzureChatMessage[] = [...conversationHistory, { role: 'user', content: prompt }];
         const responseText = await callAzureChatCompletion(messages, {
-          maxTokens: maxTokens ?? 900,
-          responseFormat: { type: 'json_object' }
+          maxTokens: maxTokens ?? 900
         });
 
         conversationHistory.push({ role: 'user', content: prompt });
