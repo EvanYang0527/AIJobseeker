@@ -1,42 +1,78 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, BookOpen, ArrowRight, Compass, Lightbulb } from 'lucide-react';
+import { GraduationCap, BookOpen, ArrowRight, Compass, Lightbulb, ExternalLink } from 'lucide-react';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
 import { useAuth } from '../../../contexts/AuthContext';
 import { entrepreneurSteps } from './entrepreneurSteps';
 
 const foundationalCourses = [
   {
-    title: 'Entrepreneurship 101: Who Is Your Customer?',
-    provider: 'MITx (edX)',
-    duration: '6 weeks',
-    focus: 'Customer discovery, value proposition design, and market validation fundamentals.'
+    title: 'Becoming an Entrepreneur',
+    provider: 'MIT (edX)',
+    link: 'https://www.edx.org/course/becoming-an-entrepreneur',
+    duration: '6 weeks (1–3 hrs/week)',
+    category: 'Startup',
+    description:
+      'Introduces the full entrepreneurial journey including identifying opportunities, understanding customers, designing and testing offerings, and planning business logistics.',
+    whyRecommended:
+      'Ideal for beginners who want a step-by-step overview of what entrepreneurship involves before committing.'
   },
   {
-    title: 'Business Foundations Specialization',
-    provider: 'Wharton Online (Coursera)',
-    duration: '4 courses · self-paced',
-    focus: 'Accounting, operations, marketing, and management essentials for new founders.'
+    title: 'Entrepreneurship: From Business Idea to Action',
+    provider: 'King’s College London (FutureLearn)',
+    link: 'https://www.futurelearn.com/courses/entrepreneurship-idea-to-action',
+    duration: '4 weeks (4 hrs/week)',
+    category: 'Startup',
+    description:
+      'Guides learners through turning ideas into action — including market research, pitching, and developing a minimum viable product.',
+    whyRecommended:
+      'Helps those with vague or early ideas explore viability and practical next steps.'
   },
   {
-    title: 'Financial Accounting Fundamentals',
-    provider: 'University of Virginia (Coursera)',
-    duration: '4 weeks',
-    focus: 'Reading financial statements, understanding cash flow, and managing startup finances.'
-  },
-  {
-    title: 'Marketing Fundamentals for Entrepreneurs',
-    provider: 'Google Digital Garage',
-    duration: '10 modules',
-    focus: 'Brand positioning, customer acquisition channels, and go-to-market basics.'
-  },
-  {
-    title: 'Small Business Legal Basics',
-    provider: 'U.S. SBA Learning Center',
+    title: 'GET Ahead',
+    provider: 'International Labour Organization (ILO)',
+    link: 'https://www.ilo.org/resource/get-ahead-resources',
     duration: 'Self-paced',
-    focus: 'Business structures, permits, and compliance considerations for new ventures.'
+    category: 'Startup / Soft Skills',
+    description:
+      'Gender-sensitive entrepreneurship training designed for people with basic literacy or numeracy, focusing on business management and soft skills.',
+    whyRecommended:
+      'Accessible and inclusive program designed for absolute beginners exploring entrepreneurship.'
+  },
+  {
+    title: 'Starting a Small Business',
+    provider: 'HP LIFE',
+    link: 'https://www.life-global.org/course/17-starting-a-small-business',
+    duration: '1 hour',
+    category: 'Startup',
+    description:
+      'Interactive course teaching entrepreneurial thinking, business planning, and success metrics using HP LIFE tools.',
+    whyRecommended:
+      'A short, hands-on course perfect for trying out business planning in a low-commitment way.'
+  },
+  {
+    title: 'Fundamentals of Starting and Running a Business',
+    provider: 'YALI (Young African Leaders Initiative)',
+    link: 'https://yali.state.gov/courses/course-959/',
+    duration: '~1.5 hours',
+    category: 'Startup',
+    description:
+      'Covers the critical aspects of entrepreneurship — from developing a business, identifying markets, and pitching to investors.',
+    whyRecommended:
+      'Clear and motivational introduction for first-time entrepreneurs seeking a practical understanding.'
   }
 ];
+
+const bonusCourse = {
+  title: 'Growth Mindsets for Teachers and Learners',
+  provider: 'Alison',
+  link: 'https://alison.com/course/growth-mindsets-for-teachers-and-learners',
+  duration: '3–4 hours',
+  category: 'Mindset',
+  description:
+    'Introduces the concept of a growth mindset and how adopting it can improve learning and adaptability.',
+  whyRecommended: 'Develops the resilience and openness needed for entrepreneurial success.'
+};
 
 export const EntrepreneurFoundations: React.FC = () => {
   const navigate = useNavigate();
@@ -78,13 +114,66 @@ export const EntrepreneurFoundations: React.FC = () => {
                     <p className="text-sm text-neuro-secondary">{course.provider}</p>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-neuro-secondary">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-neuro-secondary">
                   <span className="font-medium text-neuro-primary">Duration:</span>
                   <span>{course.duration}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="font-medium text-neuro-primary">Category:</span>
+                  <span>{course.category}</span>
                 </div>
-                <p className="text-sm neuro-text-secondary leading-relaxed">{course.focus}</p>
+                <p className="text-sm neuro-text-secondary leading-relaxed">{course.description}</p>
+                <div className="space-y-3">
+                  <div className="text-sm text-neuro-secondary bg-neuro-bg/60 border border-neuro-border rounded-neuro p-3">
+                    <span className="block font-semibold text-neuro-primary">Why we like it:</span>
+                    <span>{course.whyRecommended}</span>
+                  </div>
+                  <a
+                    href={course.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="neuro-button-primary inline-flex items-center justify-center gap-2 px-4 py-2 rounded-neuro"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Open course</span>
+                  </a>
+                </div>
               </div>
             ))}
+          </div>
+
+          <div className="neuro-surface p-6 rounded-neuro-lg space-y-4 border border-dashed border-neuro-primary/40">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 neuro-icon bg-gradient-to-br from-neuro-secondary to-pink-400">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold neuro-text-primary">Bonus Pick: {bonusCourse.title}</h3>
+                <p className="text-sm text-neuro-secondary">{bonusCourse.provider}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-neuro-secondary">
+              <span className="font-medium text-neuro-primary">Duration:</span>
+              <span>{bonusCourse.duration}</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="font-medium text-neuro-primary">Category:</span>
+              <span>{bonusCourse.category}</span>
+            </div>
+            <p className="text-sm neuro-text-secondary leading-relaxed">{bonusCourse.description}</p>
+            <div className="space-y-3">
+              <div className="text-sm text-neuro-secondary bg-neuro-bg/60 border border-neuro-border rounded-neuro p-3">
+                <span className="block font-semibold text-neuro-primary">Why we like it:</span>
+                <span>{bonusCourse.whyRecommended}</span>
+              </div>
+              <a
+                href={bonusCourse.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="neuro-button inline-flex items-center justify-center gap-2 px-4 py-2 rounded-neuro"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>Open bonus course</span>
+              </a>
+            </div>
           </div>
 
           <div className="neuro-inset p-6 rounded-neuro-lg space-y-4">
