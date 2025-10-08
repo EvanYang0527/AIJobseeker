@@ -544,12 +544,12 @@ export const PathfinderDashboard: React.FC = () => {
                 </div>
                 <h2 className="text-3xl font-bold neuro-text-primary mb-4">Ready for the Next Level?</h2>
                 <p className="text-lg neuro-text-secondary max-w-2xl mx-auto">
-                  You've completed the Pathfinder track! Ready to advance to Opportunity Seekers for more specialized training?
+                  You've completed the Career Explorer track! Ready to advance to Opportunity Seekers for more specialized training?
                 </p>
               </div>
 
               <div className="neuro-surface p-10 rounded-neuro-lg mb-8 hover:shadow-neuro-hover transition-all duration-300">
-                <h3 className="text-2xl font-bold neuro-text-primary mb-6 text-center">Your Pathfinder Journey Complete! 🎉</h3>
+                <h3 className="text-2xl font-bold neuro-text-primary mb-6 text-center">Your Career Explorer Journey Complete! 🎉</h3>
                 <div className="grid md:grid-cols-2 gap-8">
                   <div>
                     <h4 className="text-lg font-bold neuro-text-primary mb-4">What You've Accomplished ✅</h4>

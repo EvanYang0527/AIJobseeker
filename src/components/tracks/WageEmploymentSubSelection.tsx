@@ -25,7 +25,7 @@ interface WageEmploymentOption {
 const wageEmploymentOptions: WageEmploymentOption[] = [
   {
     id: 'pathfinder',
-    title: 'Pathfinder',
+    title: 'Career Explorer',
     description: 'This track helps you set goals, build confidence, and map out the first steps toward your future.',
     icon: Compass,
     color: 'success',
@@ -33,7 +33,7 @@ const wageEmploymentOptions: WageEmploymentOption[] = [
   },
   {
     id: 'opportunity-seekers',
-    title: 'Opportunity Seekers',
+    title: 'Skill Builder',
     description: 'This track connects you with training, certifications, and strategies to transition or find the right opportunity.',
     icon: Search,
     color: 'primary',
