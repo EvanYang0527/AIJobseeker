@@ -430,6 +430,60 @@ export const WorkforceReadyDashboard: React.FC = () => {
 
               {/* Skills Passport Certificate */}
               <div className="neuro-inset p-8 rounded-neuro-lg mb-8 relative overflow-hidden">
+                <div className="grid md:grid-cols-3 gap-6 mb-8 text-left">
+                  <div className="neuro-surface rounded-neuro-md p-6">
+                    <h4 className="text-xl font-semibold neuro-text-primary mb-3">Courses Completed</h4>
+                    <ul className="space-y-2 neuro-text-secondary">
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-neuro-success" />
+                        <span>Career Storytelling &amp; Personal Branding</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-neuro-success" />
+                        <span>Advanced Interview Simulations</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-neuro-success" />
+                        <span>Agile Project Collaboration Lab</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="neuro-surface rounded-neuro-md p-6">
+                    <h4 className="text-xl font-semibold neuro-text-primary mb-3">Business Plan Summary</h4>
+                    <p className="neuro-text-secondary mb-2">
+                      <span className="font-semibold neuro-text-primary">Career Path:</span> Launching a hybrid role as a Workforce
+                      Enablement Consultant supporting mid-sized tech teams.
+                    </p>
+                    <p className="neuro-text-secondary mb-2">
+                      <span className="font-semibold neuro-text-primary">Service Focus:</span> Designing onboarding playbooks,
+                      upskilling programs, and retention strategies for distributed teams.
+                    </p>
+                    <p className="neuro-text-secondary">
+                      <span className="font-semibold neuro-text-primary">Impact Goal:</span> Improve employee ramp time by 35% and
+                      increase engagement scores across client teams by 20% within 12 months.
+                    </p>
+                  </div>
+
+                  <div className="neuro-surface rounded-neuro-md p-6">
+                    <h4 className="text-xl font-semibold neuro-text-primary mb-3">Network &amp; Funding Resources</h4>
+                    <ul className="space-y-2 neuro-text-secondary">
+                      <li>
+                        <span className="font-semibold neuro-text-primary">Career Network:</span> Member of the Future of Work
+                        Collaborative with weekly peer mastermind sessions.
+                      </li>
+                      <li>
+                        <span className="font-semibold neuro-text-primary">Funding Support:</span> Approved for $2,500 in
+                        professional development credits through the City Workforce Accelerator.
+                      </li>
+                      <li>
+                        <span className="font-semibold neuro-text-primary">Opportunities:</span> Invited to consult on two pilot
+                        projects with Horizon Tech Labs and Nova Learning Group.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
                 <div className="absolute top-4 right-4">
                   <div className="w-16 h-16 neuro-icon bg-gradient-to-br from-neuro-warning to-yellow-400 border-4 border-neuro-success">
                     <Award className="w-8 h-8 text-white" />
