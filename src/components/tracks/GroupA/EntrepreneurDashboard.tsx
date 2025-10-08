@@ -546,6 +546,453 @@ OUTPUT FORMAT:
 }
 `;
 
+const KINGS_TRUST_BUSINESS_PLAN_SCHEMA = JSON.stringify(
+  {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    $id: 'https://example.com/schemas/kings-trust-business-plan.schema.json',
+    title: "King's Trust (Prince's Trust) Business Plan",
+    type: 'object',
+    additionalProperties: false,
+    required: [
+      'getting_started',
+      'section_1_executive_summary',
+      'section_2_owner_background',
+      'section_3_products_services',
+      'section_4_market',
+      'section_5_market_research',
+      'section_6_marketing_strategy',
+      'section_7_competitor_analysis',
+      'section_8_operations_logistics',
+      'section_9_costs_pricing_strategy',
+      'section_10_financial_forecasts',
+      'section_11_backup_plan'
+    ],
+    properties: {
+      metadata: {
+        type: 'object',
+        description: 'Optional metadata for your system.',
+        additionalProperties: false,
+        properties: {
+          version: { type: 'string', default: '1.0.0' },
+          generated_at: { type: 'string', format: 'date-time' },
+          authoring_tool: { type: 'string' }
+        }
+      },
+      getting_started: {
+        type: 'object',
+        title: 'Whose plan is this?',
+        additionalProperties: false,
+        required: ['business_name', 'owners', 'business_contacts'],
+        properties: {
+          business_name: { type: 'string', minLength: 1 },
+          owners: {
+            type: 'array',
+            minItems: 1,
+            items: {
+              type: 'object',
+              required: ['name'],
+              additionalProperties: false,
+              properties: {
+                name: { type: 'string' },
+                role: { type: 'string' },
+                email: { type: 'string', format: 'email' },
+                phone: { type: 'string' }
+              }
+            }
+          },
+          business_contacts: {
+            type: 'object',
+            required: ['address'],
+            additionalProperties: false,
+            properties: {
+              address: { type: 'string' },
+              postcode: { type: 'string' },
+              telephone: { type: 'string' },
+              email: { type: 'string', format: 'email' }
+            }
+          },
+          home_contacts: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              address: { type: 'string' },
+              postcode: { type: 'string' },
+              telephone: { type: 'string' },
+              email: { type: 'string', format: 'email' }
+            }
+          }
+        }
+      },
+      section_1_executive_summary: {
+        type: 'object',
+        title: 'Section 1 – Executive Summary',
+        additionalProperties: false,
+        required: ['business_summary', 'business_aims', 'financial_summary', 'elevator_pitch'],
+        properties: {
+          business_summary: { type: 'string' },
+          business_aims: { type: 'string' },
+          financial_summary: { type: 'string' },
+          elevator_pitch: {
+            type: 'object',
+            required: ['business_name', 'strapline', 'pitch'],
+            additionalProperties: false,
+            properties: {
+              business_name: { type: 'string' },
+              strapline: { type: 'string' },
+              pitch: { type: 'string' }
+            }
+          }
+        }
+      },
+      section_2_owner_background: {
+        type: 'object',
+        title: 'Section 2 – Owner’s Background',
+        additionalProperties: false,
+        required: ['motivation'],
+        properties: {
+          motivation: { type: 'string' },
+          work_experience: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                employer: { type: 'string' },
+                role: { type: 'string' },
+                dates: { type: 'string' },
+                responsibilities: { type: 'string' }
+              }
+            }
+          },
+          qualifications_education: { type: 'string' },
+          training_completed: { type: 'array', items: { type: 'string' } },
+          training_planned: { type: 'array', items: { type: 'string' } },
+          hobbies_interests: { type: 'string' },
+          additional_information: { type: 'string' }
+        }
+      },
+      section_3_products_services: {
+        type: 'object',
+        title: 'Section 3 – Products and Services',
+        additionalProperties: false,
+        required: ['selling_type', 'basic_description'],
+        properties: {
+          selling_type: { type: 'string', enum: ['product', 'service', 'both'] },
+          basic_description: { type: 'string' },
+          offerings: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['name', 'description'],
+              additionalProperties: false,
+              properties: {
+                name: { type: 'string' },
+                description: { type: 'string' },
+                launch_phase: { type: 'string', enum: ['start', 'later'] },
+                planned_start_date: { type: 'string', format: 'date' }
+              }
+            }
+          },
+          rollout_rationale: { type: 'string' },
+          additional_information: { type: 'string' }
+        }
+      },
+      section_4_market: {
+        type: 'object',
+        title: 'Section 4 – The Market',
+        additionalProperties: false,
+        required: ['customer_type', 'typical_customer'],
+        properties: {
+          customer_type: { type: 'string', enum: ['individuals', 'businesses', 'both'] },
+          typical_customer: { type: 'string' },
+          customer_locations: { type: 'string' },
+          buying_triggers: { type: 'string' },
+          choice_factors: { type: 'string' },
+          previous_sales: {
+            type: 'object',
+            required: ['has_sold'],
+            additionalProperties: false,
+            properties: {
+              has_sold: { type: 'boolean' },
+              details: { type: 'string' }
+            }
+          },
+          waiting_customers: {
+            type: 'object',
+            required: ['has_waiting_customers'],
+            additionalProperties: false,
+            properties: {
+              has_waiting_customers: { type: 'boolean' },
+              details: { type: 'string' }
+            }
+          },
+          additional_information: { type: 'string' }
+        }
+      },
+      section_5_market_research: {
+        type: 'object',
+        title: 'Section 5 – Market Research',
+        additionalProperties: false,
+        properties: {
+          desk_research_findings: { type: 'string' },
+          field_research_questionnaires: { type: 'string' },
+          field_research_test_trading: { type: 'string' },
+          additional_information: { type: 'string' }
+        }
+      },
+      section_6_marketing_strategy: {
+        type: 'object',
+        title: 'Section 6 – Marketing Strategy',
+        additionalProperties: false,
+        properties: {
+          activities: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['activity', 'rationale'],
+              additionalProperties: false,
+              properties: {
+                activity: { type: 'string' },
+                rationale: { type: 'string' },
+                estimated_cost: { type: 'number', minimum: 0 },
+                notes: { type: 'string' }
+              }
+            }
+          },
+          total_estimated_cost: { type: 'number', minimum: 0 }
+        }
+      },
+      section_7_competitor_analysis: {
+        type: 'object',
+        title: 'Section 7 – Competitor Analysis',
+        additionalProperties: false,
+        properties: {
+          competitors: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                name: { type: 'string' },
+                location: { type: 'string' },
+                product_service: { type: 'string' },
+                price: { type: 'string' },
+                strengths: { type: 'string' },
+                weaknesses: { type: 'string' },
+                business_size: { type: 'string' }
+              }
+            }
+          },
+          swot: {
+            type: 'object',
+            required: ['strengths', 'weaknesses', 'opportunities', 'threats'],
+            additionalProperties: false,
+            properties: {
+              strengths: { type: 'string' },
+              weaknesses: { type: 'string' },
+              opportunities: { type: 'string' },
+              threats: { type: 'string' }
+            }
+          },
+          usp: { type: 'string' }
+        }
+      },
+      section_8_operations_logistics: {
+        type: 'object',
+        title: 'Section 8 – Operations and Logistics',
+        additionalProperties: false,
+        properties: {
+          production: { type: 'string' },
+          delivery: { type: 'string' },
+          payment_methods_terms: { type: 'string' },
+          suppliers: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                name: { type: 'string' },
+                location: { type: 'string' },
+                items_required: { type: 'string' },
+                prices: { type: 'string' },
+                payment_arrangements: { type: 'string' },
+                reason_for_choice: { type: 'string' }
+              }
+            }
+          },
+          premises: { type: 'string' },
+          equipment: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                item: { type: 'string' },
+                already_owned: { type: 'boolean' },
+                condition: { type: 'string', enum: ['new', 'second_hand'] },
+                purchased_from: { type: 'string' },
+                price: { type: 'number', minimum: 0 }
+              }
+            }
+          },
+          transport: { type: 'string' },
+          legal_requirements: { type: 'string' },
+          insurance: { type: 'string' },
+          management_staff: { type: 'string' },
+          additional_information: { type: 'string' }
+        }
+      },
+      section_9_costs_pricing_strategy: {
+        type: 'object',
+        title: 'Section 9 – Costs and Pricing Strategy',
+        additionalProperties: false,
+        properties: {
+          pricing_table: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                product_service_name: { type: 'string' },
+                units_in_calc: { type: 'number', minimum: 0 },
+                components: { type: 'string' },
+                total_cost: { type: 'number', minimum: 0 },
+                cost_per_unit: { type: 'number', minimum: 0 },
+                price_per_unit: { type: 'number', minimum: 0 },
+                profit_margin_amount: { type: 'number' },
+                profit_margin_percent: { type: 'number' },
+                markup_percent: { type: 'number' }
+              }
+            }
+          }
+        }
+      },
+      section_10_financial_forecasts: {
+        type: 'object',
+        title: 'Section 10 – Financial Forecasts',
+        additionalProperties: false,
+        required: ['sales_and_costs_forecast', 'personal_survival_budget', 'cashflow_forecast', 'startup_costs_table'],
+        properties: {
+          sales_and_costs_forecast: {
+            type: 'array',
+            minItems: 12,
+            maxItems: 12,
+            items: {
+              type: 'object',
+              required: ['month_name', 'sales_forecast', 'costs_forecast'],
+              additionalProperties: false,
+              properties: {
+                month_index: { type: 'integer', minimum: 1, maximum: 12 },
+                month_name: { type: 'string' },
+                sales_forecast: { type: 'number', minimum: 0 },
+                costs_forecast: { type: 'number', minimum: 0 },
+                assumptions: { type: 'string' }
+              }
+            }
+          },
+          personal_survival_budget: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['costs', 'income'],
+            properties: {
+              costs: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['category', 'monthly_cost'],
+                  additionalProperties: false,
+                  properties: {
+                    category: { type: 'string' },
+                    monthly_cost: { type: 'number', minimum: 0 }
+                  }
+                }
+              },
+              income: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['source', 'monthly_amount'],
+                  additionalProperties: false,
+                  properties: {
+                    source: { type: 'string' },
+                    monthly_amount: { type: 'number', minimum: 0 }
+                  }
+                }
+              }
+            }
+          },
+          cashflow_forecast: {
+            type: 'array',
+            minItems: 12,
+            maxItems: 12,
+            items: {
+              type: 'object',
+              required: ['month_name', 'money_in', 'money_out'],
+              additionalProperties: false,
+              properties: {
+                month_index: { type: 'integer', minimum: 1, maximum: 12 },
+                month_name: { type: 'string' },
+                money_in: {
+                  type: 'object',
+                  required: ['total'],
+                  additionalProperties: false,
+                  properties: {
+                    princes_trust_funding: { type: 'number', minimum: 0 },
+                    other_funding: { type: 'number', minimum: 0 },
+                    own_funds: { type: 'number', minimum: 0 },
+                    sales_income: { type: 'number', minimum: 0 },
+                    other: { type: 'number', minimum: 0 },
+                    total: { type: 'number', minimum: 0 }
+                  }
+                },
+                money_out: {
+                  type: 'object',
+                  required: ['total'],
+                  additionalProperties: false,
+                  properties: {
+                    trust_loan_repayments: { type: 'number', minimum: 0 },
+                    personal_drawings: { type: 'number', minimum: 0 },
+                    other: { type: 'number', minimum: 0 },
+                    total: { type: 'number', minimum: 0 }
+                  }
+                },
+                opening_balance: { type: 'number' },
+                closing_balance: { type: 'number' }
+              }
+            }
+          },
+          startup_costs_table: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['item', 'calculation', 'total_cost'],
+              additionalProperties: false,
+              properties: {
+                item: { type: 'string' },
+                calculation: { type: 'string' },
+                total_cost: { type: 'number', minimum: 0 }
+              }
+            }
+          }
+        }
+      },
+      section_11_backup_plan: {
+        type: 'object',
+        title: 'Section 11 – Back-up Plan',
+        additionalProperties: false,
+        properties: {
+          short_term_plan: { type: 'string' },
+          long_term_plan: { type: 'string' },
+          plan_b: { type: 'string' },
+          plan_b_additional: { type: 'string' }
+        }
+      }
+    }
+  },
+  null,
+  2
+);
+
 const WOOP_PLAN_PROMPT = `You are the Entrepreneur WOOP Plan Coach.
 We are now focusing on the **Plan** part of WOOP.
 
@@ -554,6 +1001,7 @@ TASK:
 - Each step should be small, concrete, and time-bounded (what to do, when, and how).
 - Define what to measure at each step to confirm progress.
 - Highlight **budget, operational, and go-to-market (GTM)** considerations relevant to their stage.
+- Produce a **fully populated King's Trust (Prince's Trust) business plan** that adheres to the provided JSON schema.
 
 LEARNING PLAN:
 - Identify the **critical skills** the user must develop to achieve outcomes and overcome obstacles.
@@ -564,18 +1012,33 @@ RULES:
 - Use ONLY user-provided inputs (skills, goals, obstacles).
 - Explicitly emphasize that course lists come from retrieval, not model invention.
 - Keep all business steps and learning plan items concise, decision-ready, and aligned with the user’s stage (idea, MVP, early revenue, scaling).
+- The \`business_plan\` output MUST be valid JSON that conforms exactly to the King’s Trust schema (correct data types, required properties, structure). Populate every required field with concise, evidence-based content derived from user inputs.
 
 OUTPUT FORMAT:
+Return STRICT JSON (no markdown) with double quotes around all keys and string values:
 {
   "roadmap_steps": [
     {"step": "string", "actions": ["string", "..."], "measurement": "string", "timeline": "string"}
   ],
   "business_plan": {
-    "budget_considerations": ["string", "..."],
-    "ops_considerations": ["string", "..."],
-    "gtm_considerations": ["string", "..."]
+    "metadata": {"version": "string", "generated_at": "YYYY-MM-DDTHH:MM:SSZ", "authoring_tool": "string"},
+    "getting_started": {"business_name": "string", "owners": [{"name": "string", "role": "string", "email": "string", "phone": "string"}], "business_contacts": {"address": "string", "postcode": "string", "telephone": "string", "email": "string"}, "home_contacts": {"address": "string", "postcode": "string", "telephone": "string", "email": "string"}},
+    "section_1_executive_summary": {"business_summary": "string", "business_aims": "string", "financial_summary": "string", "elevator_pitch": {"business_name": "string", "strapline": "string", "pitch": "string"}},
+    "section_2_owner_background": {"motivation": "string", "work_experience": [{"employer": "string", "role": "string", "dates": "string", "responsibilities": "string"}], "qualifications_education": "string", "training_completed": ["string"], "training_planned": ["string"], "hobbies_interests": "string", "additional_information": "string"},
+    "section_3_products_services": {"selling_type": "product|service|both", "basic_description": "string", "offerings": [{"name": "string", "description": "string", "launch_phase": "start|later", "planned_start_date": "YYYY-MM-DD"}], "rollout_rationale": "string", "additional_information": "string"},
+    "section_4_market": {"customer_type": "individuals|businesses|both", "typical_customer": "string", "customer_locations": "string", "buying_triggers": "string", "choice_factors": "string", "previous_sales": {"has_sold": true, "details": "string"}, "waiting_customers": {"has_waiting_customers": true, "details": "string"}, "additional_information": "string"},
+    "section_5_market_research": {"desk_research_findings": "string", "field_research_questionnaires": "string", "field_research_test_trading": "string", "additional_information": "string"},
+    "section_6_marketing_strategy": {"activities": [{"activity": "string", "rationale": "string", "estimated_cost": 0, "notes": "string"}], "total_estimated_cost": 0},
+    "section_7_competitor_analysis": {"competitors": [{"name": "string", "location": "string", "product_service": "string", "price": "string", "strengths": "string", "weaknesses": "string", "business_size": "string"}], "swot": {"strengths": "string", "weaknesses": "string", "opportunities": "string", "threats": "string"}, "usp": "string"},
+    "section_8_operations_logistics": {"production": "string", "delivery": "string", "payment_methods_terms": "string", "suppliers": [{"name": "string", "location": "string", "items_required": "string", "prices": "string", "payment_arrangements": "string", "reason_for_choice": "string"}], "premises": "string", "equipment": [{"item": "string", "already_owned": true, "condition": "new|second_hand", "purchased_from": "string", "price": 0}], "transport": "string", "legal_requirements": "string", "insurance": "string", "management_staff": "string", "additional_information": "string"},
+    "section_9_costs_pricing_strategy": {"pricing_table": [{"product_service_name": "string", "units_in_calc": 0, "components": "string", "total_cost": 0, "cost_per_unit": 0, "price_per_unit": 0, "profit_margin_amount": 0, "profit_margin_percent": 0, "markup_percent": 0}]},
+    "section_10_financial_forecasts": {"sales_and_costs_forecast": [{"month_index": 1, "month_name": "string", "sales_forecast": 0, "costs_forecast": 0, "assumptions": "string"}], "personal_survival_budget": {"costs": [{"category": "string", "monthly_cost": 0}], "income": [{"source": "string", "monthly_amount": 0}]}, "cashflow_forecast": [{"month_index": 1, "month_name": "string", "money_in": {"princes_trust_funding": 0, "other_funding": 0, "own_funds": 0, "sales_income": 0, "other": 0, "total": 0}, "money_out": {"trust_loan_repayments": 0, "personal_drawings": 0, "other": 0, "total": 0}, "opening_balance": 0, "closing_balance": 0}], "startup_costs_table": [{"item": "string", "calculation": "string", "total_cost": 0}]},
+    "section_11_backup_plan": {"short_term_plan": "string", "long_term_plan": "string", "plan_b": "string", "plan_b_additional": "string"}
   }
 }
+
+The embedded schema (Draft 2020-12) for validation:
+${KINGS_TRUST_BUSINESS_PLAN_SCHEMA}
 `;
 
 export const EntrepreneurDashboard: React.FC = () => {
@@ -1048,9 +1511,8 @@ export const EntrepreneurDashboard: React.FC = () => {
         const personalityImplications = derivedInsights?.personality_implications ?? [];
         const availabilityWindows = availability?.weekly_windows ?? [];
         const roadmapSteps = woopPlan?.roadmap_steps ?? [];
-        const budgetConsiderations = woopPlan?.business_plan?.budget_considerations ?? [];
-        const opsConsiderations = woopPlan?.business_plan?.ops_considerations ?? [];
-        const gtmConsiderations = woopPlan?.business_plan?.gtm_considerations ?? [];
+        const businessPlan = woopPlan?.business_plan ?? null;
+        const businessPlanJson = businessPlan ? JSON.stringify(businessPlan, null, 2) : null;
 
         return (
           <div className="p-8 bg-neuro-bg">
@@ -1582,65 +2044,538 @@ export const EntrepreneurDashboard: React.FC = () => {
                       </div>
 
                       <div>
-                        <h4 className="text-xl font-bold neuro-text-primary mb-6">Business Plan Considerations</h4>
-                        <div className="grid md:grid-cols-3 gap-6">
-                          <div className="neuro-inset p-6 rounded-neuro">
-                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                              <DollarSign className="w-5 h-5 text-neuro-warning mr-2" />
-                              Budget Considerations
-                            </h5>
-                            <div className="space-y-2">
-                              {budgetConsiderations.length ? (
-                                budgetConsiderations.map((item, index) => (
-                                  <div key={index} className="flex items-start">
-                                    <span className="w-2 h-2 bg-neuro-warning rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                                    <span className="neuro-text-secondary text-sm">{item}</span>
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="text-sm neuro-text-secondary italic">No budget notes provided.</p>
-                              )}
-                            </div>
-                          </div>
+                        <h4 className="text-xl font-bold neuro-text-primary mb-6">King's Trust Business Plan</h4>
+                        {businessPlan ? (
+                          <div className="space-y-6">
+                            {businessPlan.metadata && (
+                              <div className="neuro-inset p-6 rounded-neuro">
+                                <h5 className="font-bold neuro-text-primary mb-3">Metadata</h5>
+                                <dl className="grid sm:grid-cols-3 gap-4 text-sm neuro-text-secondary">
+                                  {Object.entries(businessPlan.metadata).map(([key, value]) => (
+                                    <div key={key}>
+                                      <dt className="uppercase tracking-wide text-xs text-neuro-primary font-semibold">{key.replace(/_/g, ' ')}</dt>
+                                      <dd>{value ?? 'Not specified'}</dd>
+                                    </div>
+                                  ))}
+                                </dl>
+                              </div>
+                            )}
 
-                          <div className="neuro-inset p-6 rounded-neuro">
-                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                              <Building2 className="w-5 h-5 text-neuro-primary mr-2" />
-                              Operations Considerations
-                            </h5>
-                            <div className="space-y-2">
-                              {opsConsiderations.length ? (
-                                opsConsiderations.map((item, index) => (
-                                  <div key={index} className="flex items-start">
-                                    <span className="w-2 h-2 bg-neuro-primary rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                                    <span className="neuro-text-secondary text-sm">{item}</span>
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Getting Started</h5>
+                              <div className="text-sm neuro-text-secondary space-y-3">
+                                <div>
+                                  <span className="font-semibold text-neuro-primary">Business name:</span>{' '}
+                                  {businessPlan.getting_started.business_name}
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-neuro-primary">Owners:</span>
+                                  <ul className="list-disc list-inside space-y-1 mt-2">
+                                    {businessPlan.getting_started.owners.map((owner, index) => (
+                                      <li key={`${owner.name}-${index}`}>
+                                        <span className="font-semibold text-neuro-primary">{owner.name}</span>
+                                        {owner.role && ` – ${owner.role}`}
+                                        {owner.email && <span className="block text-xs">Email: {owner.email}</span>}
+                                        {owner.phone && <span className="block text-xs">Phone: {owner.phone}</span>}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-neuro-primary">Business contacts:</span>
+                                  <div className="mt-1 text-xs space-y-1">
+                                    <div>{businessPlan.getting_started.business_contacts.address}</div>
+                                    {businessPlan.getting_started.business_contacts.postcode && (
+                                      <div>Postcode: {businessPlan.getting_started.business_contacts.postcode}</div>
+                                    )}
+                                    {businessPlan.getting_started.business_contacts.telephone && (
+                                      <div>Telephone: {businessPlan.getting_started.business_contacts.telephone}</div>
+                                    )}
+                                    {businessPlan.getting_started.business_contacts.email && (
+                                      <div>Email: {businessPlan.getting_started.business_contacts.email}</div>
+                                    )}
                                   </div>
-                                ))
-                              ) : (
-                                <p className="text-sm neuro-text-secondary italic">No operations notes provided.</p>
-                              )}
+                                </div>
+                                {businessPlan.getting_started.home_contacts && (
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Home contacts:</span>
+                                    <div className="mt-1 text-xs space-y-1">
+                                      {businessPlan.getting_started.home_contacts.address && (
+                                        <div>{businessPlan.getting_started.home_contacts.address}</div>
+                                      )}
+                                      {businessPlan.getting_started.home_contacts.postcode && (
+                                        <div>Postcode: {businessPlan.getting_started.home_contacts.postcode}</div>
+                                      )}
+                                      {businessPlan.getting_started.home_contacts.telephone && (
+                                        <div>Telephone: {businessPlan.getting_started.home_contacts.telephone}</div>
+                                      )}
+                                      {businessPlan.getting_started.home_contacts.email && (
+                                        <div>Email: {businessPlan.getting_started.home_contacts.email}</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          <div className="neuro-inset p-6 rounded-neuro">
-                            <h5 className="font-bold neuro-text-primary mb-4 flex items-center">
-                              <TrendingUp className="w-5 h-5 text-neuro-secondary mr-2" />
-                              GTM Considerations
-                            </h5>
-                            <div className="space-y-2">
-                              {gtmConsiderations.length ? (
-                                gtmConsiderations.map((item, index) => (
-                                  <div key={index} className="flex items-start">
-                                    <span className="w-2 h-2 bg-neuro-secondary rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                                    <span className="neuro-text-secondary text-sm">{item}</span>
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 1 – Executive Summary</h5>
+                              <div className="text-sm neuro-text-secondary space-y-3">
+                                <p><span className="font-semibold text-neuro-primary">Business summary:</span> {businessPlan.section_1_executive_summary.business_summary}</p>
+                                <p><span className="font-semibold text-neuro-primary">Business aims:</span> {businessPlan.section_1_executive_summary.business_aims}</p>
+                                <p><span className="font-semibold text-neuro-primary">Financial summary:</span> {businessPlan.section_1_executive_summary.financial_summary}</p>
+                                <div className="neuro-surface p-4 rounded-neuro">
+                                  <h6 className="font-semibold text-neuro-primary mb-2">Elevator pitch</h6>
+                                  <p className="text-sm">{businessPlan.section_1_executive_summary.elevator_pitch.pitch}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 2 – Owner Background</h5>
+                              <div className="text-sm neuro-text-secondary space-y-3">
+                                <p><span className="font-semibold text-neuro-primary">Motivation:</span> {businessPlan.section_2_owner_background.motivation}</p>
+                                {businessPlan.section_2_owner_background.work_experience?.length ? (
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Work experience:</span>
+                                    <ul className="list-disc list-inside space-y-1 mt-2">
+                                      {businessPlan.section_2_owner_background.work_experience.map((experience, index) => (
+                                        <li key={index}>
+                                          <span className="font-semibold text-neuro-primary">{experience.role || 'Role'} at {experience.employer || 'Employer'}</span>
+                                          {experience.dates && <span className="block text-xs">{experience.dates}</span>}
+                                          {experience.responsibilities && (
+                                            <span className="block text-xs">{experience.responsibilities}</span>
+                                          )}
+                                        </li>
+                                      ))}
+                                    </ul>
                                   </div>
-                                ))
+                                ) : null}
+                                {businessPlan.section_2_owner_background.qualifications_education && (
+                                  <p><span className="font-semibold text-neuro-primary">Education:</span> {businessPlan.section_2_owner_background.qualifications_education}</p>
+                                )}
+                                {businessPlan.section_2_owner_background.training_completed && businessPlan.section_2_owner_background.training_completed.length > 0 && (
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Training completed:</span>
+                                    <ul className="list-disc list-inside space-y-1 mt-1">
+                                      {businessPlan.section_2_owner_background.training_completed.map((item, index) => (
+                                        <li key={index}>{item}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {businessPlan.section_2_owner_background.training_planned && businessPlan.section_2_owner_background.training_planned.length > 0 && (
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Training planned:</span>
+                                    <ul className="list-disc list-inside space-y-1 mt-1">
+                                      {businessPlan.section_2_owner_background.training_planned.map((item, index) => (
+                                        <li key={index}>{item}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {businessPlan.section_2_owner_background.hobbies_interests && (
+                                  <p><span className="font-semibold text-neuro-primary">Hobbies & interests:</span> {businessPlan.section_2_owner_background.hobbies_interests}</p>
+                                )}
+                                {businessPlan.section_2_owner_background.additional_information && (
+                                  <p><span className="font-semibold text-neuro-primary">Additional information:</span> {businessPlan.section_2_owner_background.additional_information}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 3 – Products & Services</h5>
+                              <div className="text-sm neuro-text-secondary space-y-3">
+                                <p><span className="font-semibold text-neuro-primary">Selling type:</span> {businessPlan.section_3_products_services.selling_type}</p>
+                                <p><span className="font-semibold text-neuro-primary">Description:</span> {businessPlan.section_3_products_services.basic_description}</p>
+                                {businessPlan.section_3_products_services.offerings?.length ? (
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Offerings:</span>
+                                    <ul className="list-disc list-inside space-y-1 mt-2">
+                                      {businessPlan.section_3_products_services.offerings.map((offering, index) => (
+                                        <li key={index}>
+                                          <span className="font-semibold text-neuro-primary">{offering.name}</span>: {offering.description}
+                                          {offering.launch_phase && <span className="block text-xs">Launch: {offering.launch_phase}</span>}
+                                          {offering.planned_start_date && <span className="block text-xs">Start date: {offering.planned_start_date}</span>}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ) : null}
+                                {businessPlan.section_3_products_services.rollout_rationale && (
+                                  <p><span className="font-semibold text-neuro-primary">Rollout rationale:</span> {businessPlan.section_3_products_services.rollout_rationale}</p>
+                                )}
+                                {businessPlan.section_3_products_services.additional_information && (
+                                  <p><span className="font-semibold text-neuro-primary">Additional info:</span> {businessPlan.section_3_products_services.additional_information}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 4 – Market</h5>
+                              <div className="text-sm neuro-text-secondary space-y-3">
+                                <p><span className="font-semibold text-neuro-primary">Customer type:</span> {businessPlan.section_4_market.customer_type}</p>
+                                <p><span className="font-semibold text-neuro-primary">Typical customer:</span> {businessPlan.section_4_market.typical_customer}</p>
+                                {businessPlan.section_4_market.customer_locations && (
+                                  <p><span className="font-semibold text-neuro-primary">Locations:</span> {businessPlan.section_4_market.customer_locations}</p>
+                                )}
+                                {businessPlan.section_4_market.buying_triggers && (
+                                  <p><span className="font-semibold text-neuro-primary">Buying triggers:</span> {businessPlan.section_4_market.buying_triggers}</p>
+                                )}
+                                {businessPlan.section_4_market.choice_factors && (
+                                  <p><span className="font-semibold text-neuro-primary">Choice factors:</span> {businessPlan.section_4_market.choice_factors}</p>
+                                )}
+                                {businessPlan.section_4_market.previous_sales && (
+                                  <p><span className="font-semibold text-neuro-primary">Previous sales:</span> {businessPlan.section_4_market.previous_sales.has_sold ? businessPlan.section_4_market.previous_sales.details || 'Yes' : 'No'}</p>
+                                )}
+                                {businessPlan.section_4_market.waiting_customers && (
+                                  <p><span className="font-semibold text-neuro-primary">Waiting customers:</span> {businessPlan.section_4_market.waiting_customers.has_waiting_customers ? businessPlan.section_4_market.waiting_customers.details || 'Yes' : 'No'}</p>
+                                )}
+                                {businessPlan.section_4_market.additional_information && (
+                                  <p><span className="font-semibold text-neuro-primary">Additional information:</span> {businessPlan.section_4_market.additional_information}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 5 – Market Research</h5>
+                              <div className="text-sm neuro-text-secondary space-y-2">
+                                {businessPlan.section_5_market_research.desk_research_findings && (
+                                  <p><span className="font-semibold text-neuro-primary">Desk research:</span> {businessPlan.section_5_market_research.desk_research_findings}</p>
+                                )}
+                                {businessPlan.section_5_market_research.field_research_questionnaires && (
+                                  <p><span className="font-semibold text-neuro-primary">Questionnaires:</span> {businessPlan.section_5_market_research.field_research_questionnaires}</p>
+                                )}
+                                {businessPlan.section_5_market_research.field_research_test_trading && (
+                                  <p><span className="font-semibold text-neuro-primary">Test trading:</span> {businessPlan.section_5_market_research.field_research_test_trading}</p>
+                                )}
+                                {businessPlan.section_5_market_research.additional_information && (
+                                  <p><span className="font-semibold text-neuro-primary">Additional info:</span> {businessPlan.section_5_market_research.additional_information}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 6 – Marketing Strategy</h5>
+                              <div className="text-sm neuro-text-secondary space-y-3">
+                                {businessPlan.section_6_marketing_strategy.activities?.length ? (
+                                  <ul className="space-y-2">
+                                    {businessPlan.section_6_marketing_strategy.activities.map((activity, index) => (
+                                      <li key={index} className="neuro-surface p-4 rounded-neuro">
+                                        <p className="font-semibold text-neuro-primary">{activity.activity}</p>
+                                        <p className="text-xs">{activity.rationale}</p>
+                                        {typeof activity.estimated_cost === 'number' && (
+                                          <p className="text-xs mt-1">Estimated cost: ${activity.estimated_cost.toLocaleString()}</p>
+                                        )}
+                                        {activity.notes && <p className="text-xs mt-1">Notes: {activity.notes}</p>}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-sm italic">No marketing activities documented.</p>
+                                )}
+                                {typeof businessPlan.section_6_marketing_strategy.total_estimated_cost === 'number' && (
+                                  <p><span className="font-semibold text-neuro-primary">Total estimated cost:</span> ${businessPlan.section_6_marketing_strategy.total_estimated_cost.toLocaleString()}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 7 – Competitor Analysis</h5>
+                              <div className="text-sm neuro-text-secondary space-y-3">
+                                {businessPlan.section_7_competitor_analysis.competitors?.length ? (
+                                  <div className="overflow-x-auto">
+                                    <table className="min-w-full text-xs">
+                                      <thead className="bg-neuro-surface text-neuro-primary uppercase tracking-wide">
+                                        <tr>
+                                          <th className="px-3 py-2 text-left">Name</th>
+                                          <th className="px-3 py-2 text-left">Location</th>
+                                          <th className="px-3 py-2 text-left">Offering</th>
+                                          <th className="px-3 py-2 text-left">Price</th>
+                                          <th className="px-3 py-2 text-left">Strengths</th>
+                                          <th className="px-3 py-2 text-left">Weaknesses</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {businessPlan.section_7_competitor_analysis.competitors.map((competitor, index) => (
+                                          <tr key={index} className="odd:bg-white/5">
+                                            <td className="px-3 py-2">{competitor.name || 'N/A'}</td>
+                                            <td className="px-3 py-2">{competitor.location || 'N/A'}</td>
+                                            <td className="px-3 py-2">{competitor.product_service || 'N/A'}</td>
+                                            <td className="px-3 py-2">{competitor.price || 'N/A'}</td>
+                                            <td className="px-3 py-2">{competitor.strengths || 'N/A'}</td>
+                                            <td className="px-3 py-2">{competitor.weaknesses || 'N/A'}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : null}
+                                <div className="grid md:grid-cols-4 gap-3">
+                                  <div className="neuro-surface p-3 rounded-neuro">
+                                    <h6 className="font-semibold text-neuro-primary text-xs uppercase">Strengths</h6>
+                                    <p className="text-xs">{businessPlan.section_7_competitor_analysis.swot.strengths}</p>
+                                  </div>
+                                  <div className="neuro-surface p-3 rounded-neuro">
+                                    <h6 className="font-semibold text-neuro-primary text-xs uppercase">Weaknesses</h6>
+                                    <p className="text-xs">{businessPlan.section_7_competitor_analysis.swot.weaknesses}</p>
+                                  </div>
+                                  <div className="neuro-surface p-3 rounded-neuro">
+                                    <h6 className="font-semibold text-neuro-primary text-xs uppercase">Opportunities</h6>
+                                    <p className="text-xs">{businessPlan.section_7_competitor_analysis.swot.opportunities}</p>
+                                  </div>
+                                  <div className="neuro-surface p-3 rounded-neuro">
+                                    <h6 className="font-semibold text-neuro-primary text-xs uppercase">Threats</h6>
+                                    <p className="text-xs">{businessPlan.section_7_competitor_analysis.swot.threats}</p>
+                                  </div>
+                                </div>
+                                {businessPlan.section_7_competitor_analysis.usp && (
+                                  <p><span className="font-semibold text-neuro-primary">Unique selling point:</span> {businessPlan.section_7_competitor_analysis.usp}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 8 – Operations & Logistics</h5>
+                              <div className="text-sm neuro-text-secondary space-y-3">
+                                {businessPlan.section_8_operations_logistics.production && (
+                                  <p><span className="font-semibold text-neuro-primary">Production:</span> {businessPlan.section_8_operations_logistics.production}</p>
+                                )}
+                                {businessPlan.section_8_operations_logistics.delivery && (
+                                  <p><span className="font-semibold text-neuro-primary">Delivery:</span> {businessPlan.section_8_operations_logistics.delivery}</p>
+                                )}
+                                {businessPlan.section_8_operations_logistics.payment_methods_terms && (
+                                  <p><span className="font-semibold text-neuro-primary">Payment terms:</span> {businessPlan.section_8_operations_logistics.payment_methods_terms}</p>
+                                )}
+                                {businessPlan.section_8_operations_logistics.suppliers?.length ? (
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Suppliers:</span>
+                                    <ul className="list-disc list-inside space-y-1 mt-2">
+                                      {businessPlan.section_8_operations_logistics.suppliers.map((supplier, index) => (
+                                        <li key={index}>
+                                          <span className="font-semibold text-neuro-primary">{supplier.name || 'Supplier'}</span>
+                                          {supplier.location && <span className="block text-xs">Location: {supplier.location}</span>}
+                                          {supplier.items_required && <span className="block text-xs">Items: {supplier.items_required}</span>}
+                                          {supplier.prices && <span className="block text-xs">Prices: {supplier.prices}</span>}
+                                          {supplier.payment_arrangements && <span className="block text-xs">Payment: {supplier.payment_arrangements}</span>}
+                                          {supplier.reason_for_choice && <span className="block text-xs">Reason: {supplier.reason_for_choice}</span>}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ) : null}
+                                {businessPlan.section_8_operations_logistics.premises && (
+                                  <p><span className="font-semibold text-neuro-primary">Premises:</span> {businessPlan.section_8_operations_logistics.premises}</p>
+                                )}
+                                {businessPlan.section_8_operations_logistics.equipment?.length ? (
+                                  <div>
+                                    <span className="font-semibold text-neuro-primary">Equipment:</span>
+                                    <ul className="list-disc list-inside space-y-1 mt-2">
+                                      {businessPlan.section_8_operations_logistics.equipment.map((equipment, index) => (
+                                        <li key={index}>
+                                          <span className="font-semibold text-neuro-primary">{equipment.item || 'Item'}</span>
+                                          {equipment.already_owned != null && (
+                                            <span className="block text-xs">Already owned: {equipment.already_owned ? 'Yes' : 'No'}</span>
+                                          )}
+                                          {equipment.condition && <span className="block text-xs">Condition: {equipment.condition}</span>}
+                                          {equipment.purchased_from && <span className="block text-xs">Source: {equipment.purchased_from}</span>}
+                                          {typeof equipment.price === 'number' && (
+                                            <span className="block text-xs">Price: ${equipment.price.toLocaleString()}</span>
+                                          )}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ) : null}
+                                {businessPlan.section_8_operations_logistics.transport && (
+                                  <p><span className="font-semibold text-neuro-primary">Transport:</span> {businessPlan.section_8_operations_logistics.transport}</p>
+                                )}
+                                {businessPlan.section_8_operations_logistics.legal_requirements && (
+                                  <p><span className="font-semibold text-neuro-primary">Legal requirements:</span> {businessPlan.section_8_operations_logistics.legal_requirements}</p>
+                                )}
+                                {businessPlan.section_8_operations_logistics.insurance && (
+                                  <p><span className="font-semibold text-neuro-primary">Insurance:</span> {businessPlan.section_8_operations_logistics.insurance}</p>
+                                )}
+                                {businessPlan.section_8_operations_logistics.management_staff && (
+                                  <p><span className="font-semibold text-neuro-primary">Management & staff:</span> {businessPlan.section_8_operations_logistics.management_staff}</p>
+                                )}
+                                {businessPlan.section_8_operations_logistics.additional_information && (
+                                  <p><span className="font-semibold text-neuro-primary">Additional info:</span> {businessPlan.section_8_operations_logistics.additional_information}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 9 – Costs & Pricing Strategy</h5>
+                              {businessPlan.section_9_costs_pricing_strategy.pricing_table?.length ? (
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full text-xs">
+                                    <thead className="bg-neuro-surface text-neuro-primary uppercase tracking-wide">
+                                      <tr>
+                                        <th className="px-3 py-2 text-left">Product/Service</th>
+                                        <th className="px-3 py-2 text-left">Units</th>
+                                        <th className="px-3 py-2 text-left">Components</th>
+                                        <th className="px-3 py-2 text-left">Total Cost</th>
+                                        <th className="px-3 py-2 text-left">Price / Unit</th>
+                                        <th className="px-3 py-2 text-left">Margin $</th>
+                                        <th className="px-3 py-2 text-left">Margin %</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {businessPlan.section_9_costs_pricing_strategy.pricing_table.map((row, index) => (
+                                        <tr key={index} className="odd:bg-white/5">
+                                          <td className="px-3 py-2">{row.product_service_name || 'N/A'}</td>
+                                          <td className="px-3 py-2">{row.units_in_calc ?? '—'}</td>
+                                          <td className="px-3 py-2">{row.components || 'N/A'}</td>
+                                          <td className="px-3 py-2">{typeof row.total_cost === 'number' ? `$${row.total_cost.toLocaleString()}` : '—'}</td>
+                                          <td className="px-3 py-2">{typeof row.price_per_unit === 'number' ? `$${row.price_per_unit.toLocaleString()}` : '—'}</td>
+                                          <td className="px-3 py-2">{typeof row.profit_margin_amount === 'number' ? `$${row.profit_margin_amount.toLocaleString()}` : '—'}</td>
+                                          <td className="px-3 py-2">{typeof row.profit_margin_percent === 'number' ? `${row.profit_margin_percent}%` : '—'}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
                               ) : (
-                                <p className="text-sm neuro-text-secondary italic">No GTM notes provided.</p>
+                                <p className="text-sm neuro-text-secondary italic">No pricing table provided.</p>
                               )}
                             </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-4">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 10 – Financial Forecasts</h5>
+                              <div className="space-y-4 text-sm neuro-text-secondary">
+                                {businessPlan.section_10_financial_forecasts.sales_and_costs_forecast?.length ? (
+                                  <div>
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Sales & Costs Forecast</h6>
+                                    <div className="overflow-x-auto">
+                                      <table className="min-w-full text-xs">
+                                        <thead className="bg-neuro-surface text-neuro-primary uppercase tracking-wide">
+                                          <tr>
+                                            <th className="px-3 py-2 text-left">Month</th>
+                                            <th className="px-3 py-2 text-left">Sales</th>
+                                            <th className="px-3 py-2 text-left">Costs</th>
+                                            <th className="px-3 py-2 text-left">Assumptions</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {businessPlan.section_10_financial_forecasts.sales_and_costs_forecast.map((row, index) => (
+                                            <tr key={index} className="odd:bg-white/5">
+                                              <td className="px-3 py-2">{row.month_name}</td>
+                                              <td className="px-3 py-2">${row.sales_forecast.toLocaleString()}</td>
+                                              <td className="px-3 py-2">${row.costs_forecast.toLocaleString()}</td>
+                                              <td className="px-3 py-2">{row.assumptions || '—'}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  <div className="neuro-surface p-4 rounded-neuro">
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Personal Survival Budget – Costs</h6>
+                                    <ul className="space-y-1 text-xs">
+                                      {businessPlan.section_10_financial_forecasts.personal_survival_budget.costs.map((item, index) => (
+                                        <li key={index} className="flex justify-between">
+                                          <span>{item.category}</span>
+                                          <span>${item.monthly_cost.toLocaleString()}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  <div className="neuro-surface p-4 rounded-neuro">
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Personal Survival Budget – Income</h6>
+                                    <ul className="space-y-1 text-xs">
+                                      {businessPlan.section_10_financial_forecasts.personal_survival_budget.income.map((item, index) => (
+                                        <li key={index} className="flex justify-between">
+                                          <span>{item.source}</span>
+                                          <span>${item.monthly_amount.toLocaleString()}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+
+                                {businessPlan.section_10_financial_forecasts.cashflow_forecast?.length ? (
+                                  <div>
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Cashflow Forecast</h6>
+                                    <div className="overflow-x-auto">
+                                      <table className="min-w-full text-xs">
+                                        <thead className="bg-neuro-surface text-neuro-primary uppercase tracking-wide">
+                                          <tr>
+                                            <th className="px-3 py-2 text-left">Month</th>
+                                            <th className="px-3 py-2 text-left">Money In</th>
+                                            <th className="px-3 py-2 text-left">Money Out</th>
+                                            <th className="px-3 py-2 text-left">Opening</th>
+                                            <th className="px-3 py-2 text-left">Closing</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {businessPlan.section_10_financial_forecasts.cashflow_forecast.map((row, index) => (
+                                            <tr key={index} className="odd:bg-white/5">
+                                              <td className="px-3 py-2">{row.month_name}</td>
+                                              <td className="px-3 py-2">${row.money_in.total.toLocaleString()}</td>
+                                              <td className="px-3 py-2">${row.money_out.total.toLocaleString()}</td>
+                                              <td className="px-3 py-2">{row.opening_balance != null ? `$${row.opening_balance.toLocaleString()}` : '—'}</td>
+                                              <td className="px-3 py-2">{row.closing_balance != null ? `$${row.closing_balance.toLocaleString()}` : '—'}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                {businessPlan.section_10_financial_forecasts.startup_costs_table?.length ? (
+                                  <div>
+                                    <h6 className="font-semibold text-neuro-primary mb-2">Startup Costs</h6>
+                                    <ul className="space-y-1 text-xs">
+                                      {businessPlan.section_10_financial_forecasts.startup_costs_table.map((item, index) => (
+                                        <li key={index} className="flex justify-between">
+                                          <span>{item.item} – {item.calculation}</span>
+                                          <span>${item.total_cost.toLocaleString()}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div className="neuro-inset p-6 rounded-neuro space-y-3">
+                              <h5 className="font-bold neuro-text-primary text-lg">Section 11 – Back-up Plan</h5>
+                              <div className="text-sm neuro-text-secondary space-y-2">
+                                {businessPlan.section_11_backup_plan.short_term_plan && (
+                                  <p><span className="font-semibold text-neuro-primary">Short-term plan:</span> {businessPlan.section_11_backup_plan.short_term_plan}</p>
+                                )}
+                                {businessPlan.section_11_backup_plan.long_term_plan && (
+                                  <p><span className="font-semibold text-neuro-primary">Long-term plan:</span> {businessPlan.section_11_backup_plan.long_term_plan}</p>
+                                )}
+                                {businessPlan.section_11_backup_plan.plan_b && (
+                                  <p><span className="font-semibold text-neuro-primary">Plan B:</span> {businessPlan.section_11_backup_plan.plan_b}</p>
+                                )}
+                                {businessPlan.section_11_backup_plan.plan_b_additional && (
+                                  <p><span className="font-semibold text-neuro-primary">Plan B (additional):</span> {businessPlan.section_11_backup_plan.plan_b_additional}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {businessPlanJson && (
+                              <div className="neuro-inset p-6 rounded-neuro">
+                                <h5 className="font-bold neuro-text-primary mb-3">Full JSON Output</h5>
+                                <p className="text-sm neuro-text-secondary mb-3">
+                                  This is the exact payload returned by Azure OpenAI, validating against the King’s Trust schema.
+                                </p>
+                                <pre className="text-xs whitespace-pre-wrap bg-black/20 p-4 rounded-neuro overflow-x-auto">
+{businessPlanJson}
+                                </pre>
+                              </div>
+                            )}
                           </div>
-                        </div>
+                        ) : (
+                          <p className="text-sm neuro-text-secondary italic">Business plan data is unavailable.</p>
+                        )}
                       </div>
                     </div>
                   </div>
