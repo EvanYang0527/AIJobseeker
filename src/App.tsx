@@ -8,7 +8,6 @@ import { TrackSelection } from './components/tracks/TrackSelection';
 import { WageEmploymentSubSelection } from './components/tracks/WageEmploymentSubSelection';
 import { TrackRecommendation } from './components/tracks/TrackRecommendation';
 import { EntrepreneurDashboard } from './components/tracks/GroupA/EntrepreneurDashboard';
-import { EntrepreneurFoundations } from './components/tracks/GroupA/EntrepreneurFoundations';
 import { WageEmploymentDashboard } from './components/tracks/GroupC/WageEmploymentDashboard';
 import { PathfinderDashboard } from './components/tracks/GroupC/PathfinderDashboard';
 import { OpportunitySeekersDashboard } from './components/tracks/GroupC/OpportunitySeekersDashboard';
@@ -102,12 +101,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/entrepreneur/dashboard" element={
         <PrivateRoute>
           <EntrepreneurDashboard />
-        </PrivateRoute>
-      } />
-
-      <Route path="/entrepreneur/foundations" element={
-        <PrivateRoute>
-          <EntrepreneurFoundations />
         </PrivateRoute>
       } />
       
