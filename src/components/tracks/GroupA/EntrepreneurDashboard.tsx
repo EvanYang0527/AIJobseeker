@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
-import { GoalSetting } from './GoalSetting';
+import { BusinessDevelopmentIntake, BusinessDevelopmentIntakeValues } from './BusinessDevelopmentIntake';
 import { LearningPlanRecommendation, ProgressStep, User, VentureStage } from '../../../types';
 import { WoopIntakeSummary, WoopWish, WoopOutcome, WoopObstacles, WoopPlan } from '../../../types/woop';
 import { AzureChatMessage, callAzureChatCompletion, parseAzureJSON } from '../../../utils/azureOpenAI';
@@ -40,8 +40,7 @@ import {
 
 const entrepreneurSteps: ProgressStep[] = [
   { id: 'skillcraft-entrepreneurship-tasks', label: 'SkillCraft Entrepreneurship Tasks', completed: false, current: true },
-  { id: 'assessment-questionnaire', label: 'Assessment Questionnaire', completed: false, current: false },
-  { id: 'goal-setting', label: 'Scope the Idea', completed: false, current: false },
+  { id: 'assessment-questionnaire', label: 'Assessment & Idea Scope', completed: false, current: false },
   { id: 'business-plan-creation', label: 'Business Plan Creation', completed: false, current: false },
   { id: 'learning-plan-recommendations', label: 'Learning Course Recommendations', completed: false, current: false },
   { id: 'ai-mentor-program', label: 'AI Mentor Program', completed: false, current: false },
@@ -232,17 +231,24 @@ const buildWoopIntakePrompt = (user: User | null) => {
     timeAvailable?: unknown;
   };
 
+  type BusinessDevelopmentIntakeRecord = Partial<BusinessDevelopmentIntakeValues>;
+
   const goalSettingData = getRecordFromProfile('goalSettingData') as GoalSettingRecord | undefined;
   const wageQuestionnaire = getRecordFromProfile('wageEmploymentQuestionnaire') as
     | WageQuestionnaireRecord
     | undefined;
   const priorExperience = getRecordFromProfile('priorExperience') as PriorExperienceRecord | undefined;
+  const businessDevelopmentIntake = getRecordFromProfile('businessDevelopmentIntake') as
+    | BusinessDevelopmentIntakeRecord
+    | undefined;
 
   const businessIdeaValue = getFirstFilledValue(
     profile.businessIdea,
     goalSettingData?.businessIdea,
     extendedProfile?.businessIdea,
-    priorExperience?.careerGoals
+    priorExperience?.careerGoals,
+    businessDevelopmentIntake?.summary,
+    businessDevelopmentIntake?.ideaName
   );
 
   const businessCategoryValue = getFirstFilledValue(
@@ -326,6 +332,27 @@ const buildWoopIntakePrompt = (user: User | null) => {
       `Time commitment: ${formatPromptValue(goalSettingData.timeCommitment)}`,
       `Career goals: ${formatPromptValue(goalSettingData.careerGoals)}`,
       `Skills to improve: ${formatPromptValue(goalSettingData.skillsToImprove)}`
+    );
+  }
+
+  if (businessDevelopmentIntake) {
+    goalSettingLinesSections.push(
+      '',
+      'BUSINESS DEVELOPMENT INTAKE',
+      `Idea name: ${formatPromptValue(businessDevelopmentIntake.ideaName)}`,
+      `Summary: ${formatPromptValue(businessDevelopmentIntake.summary)}`,
+      `Problem: ${formatPromptValue(businessDevelopmentIntake.problem)}`,
+      `Why it matters: ${formatPromptValue(businessDevelopmentIntake.whyItMatters)}`,
+      `Main customer or user: ${formatPromptValue(businessDevelopmentIntake.mainCustomer)}`,
+      `Pain point: ${formatPromptValue(businessDevelopmentIntake.painPoint)}`,
+      `How the idea helps: ${formatPromptValue(businessDevelopmentIntake.ideaHelp)}`,
+      `Existing options: ${formatPromptValue(businessDevelopmentIntake.existingOptions)}`,
+      `Unique edge: ${formatPromptValue(businessDevelopmentIntake.edge)}`,
+      `Offering type: ${formatPromptValue(businessDevelopmentIntake.offering)}`,
+      `Revenue approach: ${formatPromptValue(businessDevelopmentIntake.revenueModel)}`,
+      `Potential partners: ${formatPromptValue(businessDevelopmentIntake.partners)}`,
+      `Immediate needs: ${formatPromptValue(businessDevelopmentIntake.needs)}`,
+      `Success signal: ${formatPromptValue(businessDevelopmentIntake.success)}`
     );
   }
 
@@ -982,67 +1009,10 @@ export const EntrepreneurDashboard: React.FC = () => {
 
       case 'assessment-questionnaire':
         return (
-          <div className="p-8 bg-neuro-bg">
-            <div className="neuro-card max-w-3xl mx-auto hover:shadow-neuro-hover transition-all duration-300">
-              <div className="text-center mb-8">
-                <div className="w-24 h-24 neuro-icon mx-auto mb-6 bg-gradient-to-br from-neuro-warning to-yellow-400 neuro-animate-float">
-                  <FileText className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold neuro-text-primary mb-4">Assessment Questionnaire</h2>
-                <p className="text-lg neuro-text-secondary">
-                  Help us understand your entrepreneurial background and experience.
-                </p>
-              </div>
-
-              <div className="space-y-6">
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <label className="block text-lg font-bold neuro-text-primary mb-3">
-                    Previous Business Experience 💼
-                  </label>
-                  <textarea
-                    rows={3}
-                    className="neuro-input resize-none text-lg"
-                    placeholder="Describe any previous business or entrepreneurial experience..."
-                  />
-                </div>
-
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <label className="block text-lg font-bold neuro-text-primary mb-3">
-                    Risk Tolerance 📊
-                  </label>
-                  <select className="neuro-select text-lg">
-                    <option value="">Select your risk tolerance level</option>
-                    <option value="low">Low - Prefer stable, predictable outcomes</option>
-                    <option value="moderate">Moderate - Comfortable with calculated risks</option>
-                    <option value="high">High - Thrive on uncertainty and challenges</option>
-                  </select>
-                </div>
-
-                <div className="text-center neuro-inset p-6 rounded-neuro-lg">
-                  <button
-                    onClick={() => completeStep('assessment-questionnaire', 'goal-setting')}
-                    className="neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg hover:scale-105 transition-all duration-300"
-                  >
-                    <FileText className="w-6 h-6 mr-3" />
-                    <span>Submit Assessment</span>
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </button>
-                </div>
-                
-                <div className="text-center mt-6">
-                  <div className="neuro-inset p-4 rounded-neuro">
-                    <p className="text-sm neuro-text-muted">
-                      💡 <strong>Pro Tip:</strong> Complete the SkillCraft assessment first to get personalized business recommendations and unlock advanced mentorship features.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <BusinessDevelopmentIntake
+            onComplete={() => completeStep('assessment-questionnaire', 'business-plan-creation')}
+          />
         );
-
-      case 'goal-setting':
-        return <GoalSetting onComplete={() => completeStep('goal-setting', 'business-plan-creation')} />;
 
       case 'business-plan-creation': {
         const hasWoopReport =
