@@ -12,6 +12,7 @@ export interface User {
     currentProgressBar?: number;
   };
   profile?: {
+    businessDevelopmentIntake?: BusinessDevelopmentIntake;
     businessIdea?: string;
     businessCategory?: string;
     experienceYears?: number;
@@ -45,6 +46,23 @@ export interface User {
       workExperience?: string;
     };
   };
+}
+
+export interface BusinessDevelopmentIntake {
+  ideaName?: string;
+  ideaSummary?: string;
+  ideaProblem?: string;
+  ideaImportance?: string;
+  mainCustomer?: string;
+  customerPainPoint?: string;
+  ideaBenefit?: string;
+  existingOptions?: string;
+  differentiator?: string;
+  offeringType?: string;
+  revenueApproach?: string;
+  potentialPartners?: string;
+  immediateNeeds?: string;
+  successDefinition?: string;
 }
 
 export interface TrackOption {

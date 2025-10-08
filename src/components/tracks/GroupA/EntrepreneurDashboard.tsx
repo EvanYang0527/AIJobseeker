@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { DashboardLayout } from '../../dashboard/DashboardLayout';
-import { GoalSetting } from './GoalSetting';
-import { LearningPlanRecommendation, ProgressStep, User, VentureStage } from '../../../types';
+import { BusinessDevelopmentIntake, LearningPlanRecommendation, ProgressStep, User, VentureStage } from '../../../types';
 import { WoopIntakeSummary, WoopWish, WoopOutcome, WoopObstacles, WoopPlan } from '../../../types/woop';
 import { AzureChatMessage, callAzureChatCompletion, parseAzureJSON } from '../../../utils/azureOpenAI';
 import { AssessmentResults } from '../../assessment/AssessmentResults';
@@ -40,8 +39,7 @@ import {
 
 const entrepreneurSteps: ProgressStep[] = [
   { id: 'skillcraft-entrepreneurship-tasks', label: 'SkillCraft Entrepreneurship Tasks', completed: false, current: true },
-  { id: 'assessment-questionnaire', label: 'Assessment Questionnaire', completed: false, current: false },
-  { id: 'goal-setting', label: 'Scope the Idea', completed: false, current: false },
+  { id: 'assessment-questionnaire', label: 'Assessment & Idea Scope', completed: false, current: false },
   { id: 'business-plan-creation', label: 'Business Plan Creation', completed: false, current: false },
   { id: 'learning-plan-recommendations', label: 'Learning Course Recommendations', completed: false, current: false },
   { id: 'ai-mentor-program', label: 'AI Mentor Program', completed: false, current: false },
@@ -186,12 +184,49 @@ const formatDifficultyLabel = (difficulty: string | null | undefined) => {
     .join(' ');
 };
 
+type BusinessDevelopmentIntakeFormState = {
+  ideaName: string;
+  ideaSummary: string;
+  ideaProblem: string;
+  ideaImportance: string;
+  mainCustomer: string;
+  customerPainPoint: string;
+  ideaBenefit: string;
+  existingOptions: string;
+  differentiator: string;
+  offeringType: string;
+  revenueApproach: string;
+  potentialPartners: string;
+  immediateNeeds: string;
+  successDefinition: string;
+};
+
+const createInitialBusinessIntakeForm = (
+  intake?: BusinessDevelopmentIntake | null
+): BusinessDevelopmentIntakeFormState => ({
+  ideaName: intake?.ideaName ?? '',
+  ideaSummary: intake?.ideaSummary ?? '',
+  ideaProblem: intake?.ideaProblem ?? '',
+  ideaImportance: intake?.ideaImportance ?? '',
+  mainCustomer: intake?.mainCustomer ?? '',
+  customerPainPoint: intake?.customerPainPoint ?? '',
+  ideaBenefit: intake?.ideaBenefit ?? '',
+  existingOptions: intake?.existingOptions ?? '',
+  differentiator: intake?.differentiator ?? '',
+  offeringType: intake?.offeringType ?? '',
+  revenueApproach: intake?.revenueApproach ?? '',
+  potentialPartners: intake?.potentialPartners ?? '',
+  immediateNeeds: intake?.immediateNeeds ?? '',
+  successDefinition: intake?.successDefinition ?? ''
+});
+
 const buildWoopIntakePrompt = (user: User | null) => {
   const profile = user?.profile ?? {};
   const skillcraftText = "Processing Speed (96.46): Very fast on timed connection tasks; Visual–Spatial (100.00): Top performance on short-term visual memory (longest Corsi span reached the benchmark);Problem Solving (77.78): Strong learning from feedback in the maze (most of the scored trials were correct);Attention (92.0): High sustained attention and target accuracy;Concentration (72.22): Good digit memory; backward span (harder) and forward span averaged to a solid score;Persistence (83.33): Stuck with the motor task for a substantial portion of time; good perseverance;Emotional Intelligence;Self-Awareness (83.33): Clear sense of one’s feelings and internal states;Self-Management (40.0): More variability with regulating emotions/impulses under pressure;Social Awareness (75.0): Strong capacity to read others and social cues;Extraversion (79.17): Tends toward outgoing/energetic;Agreeableness (70.83): Cooperative and considerate;Conscientiousness (66.67): Organized and goal-directed;Emotional Stability (62.5): Generally calm/resilient with some stress sensitivity;Openness (66.67): Curious and receptive to new ideas/experiences;Growth Mindset (56.25): Moderately growth-oriented beliefs (some room to strengthen “abilities can improve with effort”).";
 
   const toReadableLabel = (key: string) =>
     key
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
       .replace(/[_-]+/g, ' ')
       .replace(/\b\w/g, char => char.toUpperCase());
 
@@ -232,47 +267,38 @@ const buildWoopIntakePrompt = (user: User | null) => {
     timeAvailable?: unknown;
   };
 
+  type BusinessDevelopmentIntakeRecord = {
+    ideaName?: unknown;
+    ideaSummary?: unknown;
+    ideaProblem?: unknown;
+    ideaImportance?: unknown;
+    mainCustomer?: unknown;
+    customerPainPoint?: unknown;
+    ideaBenefit?: unknown;
+    existingOptions?: unknown;
+    differentiator?: unknown;
+    offeringType?: unknown;
+    revenueApproach?: unknown;
+    potentialPartners?: unknown;
+    immediateNeeds?: unknown;
+    successDefinition?: unknown;
+  };
+
   const goalSettingData = getRecordFromProfile('goalSettingData') as GoalSettingRecord | undefined;
   const wageQuestionnaire = getRecordFromProfile('wageEmploymentQuestionnaire') as
     | WageQuestionnaireRecord
     | undefined;
   const priorExperience = getRecordFromProfile('priorExperience') as PriorExperienceRecord | undefined;
+  const businessDevelopmentIntake = getRecordFromProfile('businessDevelopmentIntake') as
+    | BusinessDevelopmentIntakeRecord
+    | undefined;
 
   const businessIdeaValue = getFirstFilledValue(
+    businessDevelopmentIntake?.ideaSummary,
     profile.businessIdea,
     goalSettingData?.businessIdea,
     extendedProfile?.businessIdea,
     priorExperience?.careerGoals
-  );
-
-  const businessCategoryValue = getFirstFilledValue(
-    profile.businessCategory,
-    extendedProfile?.businessCategory,
-    goalSettingData?.businessCategory
-  );
-
-  const experienceYearsValue = getFirstFilledValue(
-    profile.experienceYears,
-    goalSettingData?.experienceYears,
-    extendedProfile?.experienceYears
-  );
-
-  const timeCommitmentValue = getFirstFilledValue(
-    profile.timeCommitment,
-    goalSettingData?.timeCommitment,
-    extendedProfile?.timeCommitment
-  );
-
-  const careerGoalsValue = getFirstFilledValue(
-    extendedProfile?.careerGoals,
-    goalSettingData?.careerGoals,
-    priorExperience?.careerGoals
-  );
-
-  const skillsToImproveValue = getFirstFilledValue(
-    extendedProfile?.skillsToImprove,
-    goalSettingData?.skillsToImprove,
-    priorExperience?.skillsConfidence
   );
 
   const careerLevelValue = getFirstFilledValue(
@@ -293,18 +319,31 @@ const buildWoopIntakePrompt = (user: User | null) => {
     `Phone number: ${formatPromptValue(user?.phoneNumber)}`,
     `Selected track: ${formatPromptValue(user?.selectedTrack)}`,
     '',
-    'Scope the Idea RESPONSES',
-    `Business idea summary: ${formatPromptValue(businessIdeaValue)}`,
-    `Business category: ${formatPromptValue(businessCategoryValue)}`,
-    `Relevant experience in years: ${formatPromptValue(experienceYearsValue)}`,
-    `Preferred time commitment: ${formatPromptValue(timeCommitmentValue)}`,
-    `Career goals: ${formatPromptValue(careerGoalsValue)}`,
-    `Skills to improve: ${formatPromptValue(skillsToImproveValue)}`,
-    `Career level: ${formatPromptValue(careerLevelValue)}`,
-    `Has work experience: ${formatPromptValue(hasWorkExperienceValue)}`,
-    '',
-    'ASSESSMENT QUESTIONNAIRE RESPONSES',
+    'BUSINESS DEVELOPMENT INTAKE RESPONSES',
   ];
+
+  const appendIntakeValue = (label: string, value: unknown) => {
+    goalSettingLinesSections.push(`${label}: ${formatPromptValue(value)}`);
+  };
+
+  appendIntakeValue('Idea name', businessDevelopmentIntake?.ideaName);
+  appendIntakeValue('One sentence summary', businessIdeaValue);
+  appendIntakeValue('The problem', businessDevelopmentIntake?.ideaProblem);
+  appendIntakeValue('Why it matters', businessDevelopmentIntake?.ideaImportance);
+  appendIntakeValue('Main customer or user', businessDevelopmentIntake?.mainCustomer);
+  appendIntakeValue('Their biggest pain point', businessDevelopmentIntake?.customerPainPoint);
+  appendIntakeValue('How your idea helps', businessDevelopmentIntake?.ideaBenefit);
+  appendIntakeValue('Existing options', businessDevelopmentIntake?.existingOptions);
+  appendIntakeValue('Your edge', businessDevelopmentIntake?.differentiator);
+  appendIntakeValue('What you will offer', businessDevelopmentIntake?.offeringType);
+  appendIntakeValue("How you'll earn money", businessDevelopmentIntake?.revenueApproach);
+  appendIntakeValue('Who you might work with', businessDevelopmentIntake?.potentialPartners);
+  appendIntakeValue('What do you need right now?', businessDevelopmentIntake?.immediateNeeds);
+  appendIntakeValue('What success looks like', businessDevelopmentIntake?.successDefinition);
+  appendIntakeValue('Career level', careerLevelValue);
+  appendIntakeValue('Has work experience', hasWorkExperienceValue);
+
+  goalSettingLinesSections.push('', 'ASSESSMENT QUESTIONNAIRE RESPONSES');
 
   if (assessmentResponses && Object.keys(assessmentResponses).length > 0) {
     Object.entries(assessmentResponses).forEach(([key, value]) => {
@@ -363,13 +402,13 @@ const buildWoopIntakePrompt = (user: User | null) => {
 You are the Intake Summarizer for the Entrepreneur WOOP Plan Coach.
 
 OBJECTIVE
-Ingest the attached SkillCraft report (PDF text below) and the goal-setting text captured from the user. Produce a single, durable JSON summary we can reuse for subsequent W-O-O-P business-plan steps. DO NOT retrieve any data. Do NOT search for courses. Do NOT fabricate facts. If information is missing or unclear, add it to "assumptions" and set "confidence":"low".
+Ingest the attached SkillCraft report (PDF text below) and the intake text captured from the user. Produce a single, durable JSON summary we can reuse for subsequent W-O-O-P business-plan steps. DO NOT retrieve any data. Do NOT search for courses. Do NOT fabricate facts. If information is missing or unclear, add it to "assumptions" and set "confidence":"low".
 
 INPUTS
 [SKILLCRAFT_PDF]
 ${skillcraftText}
 
-[GOAL_SETTING_TEXT]
+[INTAKE_TEXT]
 ${goalSettingLines}
 
 RULES
@@ -579,6 +618,23 @@ export const EntrepreneurDashboard: React.FC = () => {
   const [learningPlan, setLearningPlan] = useState<LearningPlanRecommendation | null>(null);
   const [learningPlanLoading, setLearningPlanLoading] = useState(false);
   const [learningPlanError, setLearningPlanError] = useState<string | null>(null);
+  const [businessIntakeForm, setBusinessIntakeForm] = useState<BusinessDevelopmentIntakeFormState>(() =>
+    createInitialBusinessIntakeForm(user?.profile?.businessDevelopmentIntake ?? null)
+  );
+
+  useEffect(() => {
+    setBusinessIntakeForm(createInitialBusinessIntakeForm(user?.profile?.businessDevelopmentIntake ?? null));
+  }, [user?.profile?.businessDevelopmentIntake]);
+
+  const handleBusinessIntakeChange = (
+    field: keyof BusinessDevelopmentIntakeFormState,
+    value: string
+  ) => {
+    setBusinessIntakeForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const ventureStage = normalizeVentureStage(woopSummary?.user_profile.stage);
 
@@ -824,10 +880,50 @@ export const EntrepreneurDashboard: React.FC = () => {
         }
       });
     }
-    
+
     if (nextStepId) {
       setCurrentStep(nextStepId);
     }
+  };
+
+  const handleBusinessIntakeSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const sanitizedIntake = Object.entries(businessIntakeForm).reduce(
+      (acc, [key, value]) => {
+        const trimmed = value.trim();
+        if (trimmed.length > 0) {
+          acc[key as keyof BusinessDevelopmentIntake] = trimmed;
+        }
+        return acc;
+      },
+      {} as BusinessDevelopmentIntake
+    );
+
+    const questionnaireResponses = Object.entries(businessIntakeForm).reduce(
+      (acc, [key, value]) => {
+        const trimmed = value.trim();
+        if (trimmed.length > 0) {
+          acc[key] = trimmed;
+        }
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+
+    updateUser({
+      profile: {
+        ...user?.profile,
+        businessIdea: sanitizedIntake.ideaSummary || sanitizedIntake.ideaName || user?.profile?.businessIdea,
+        businessDevelopmentIntake: sanitizedIntake,
+        assessmentQuestionnaire: {
+          ...(user?.profile?.assessmentQuestionnaire ?? {}),
+          ...questionnaireResponses
+        }
+      }
+    });
+
+    completeStep('assessment-questionnaire', 'business-plan-creation');
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -970,7 +1066,7 @@ export const EntrepreneurDashboard: React.FC = () => {
                       onClick={() => completeStep('skillcraft-entrepreneurship-tasks', 'assessment-questionnaire')}
                       className="neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg hover:scale-105 transition-all duration-300"
                     >
-                      <span>Continue to Assessment Questionnaire</span>
+                      <span>Continue to Assessment &amp; Idea Scope</span>
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </button>
                   </div>
@@ -983,66 +1079,248 @@ export const EntrepreneurDashboard: React.FC = () => {
       case 'assessment-questionnaire':
         return (
           <div className="p-8 bg-neuro-bg">
-            <div className="neuro-card max-w-3xl mx-auto hover:shadow-neuro-hover transition-all duration-300">
+            <div className="neuro-card max-w-4xl mx-auto hover:shadow-neuro-hover transition-all duration-300">
               <div className="text-center mb-8">
                 <div className="w-24 h-24 neuro-icon mx-auto mb-6 bg-gradient-to-br from-neuro-warning to-yellow-400 neuro-animate-float">
                   <FileText className="w-10 h-10 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold neuro-text-primary mb-4">Assessment Questionnaire</h2>
-                <p className="text-lg neuro-text-secondary">
-                  Help us understand your entrepreneurial background and experience.
+                <h2 className="text-3xl font-bold neuro-text-primary mb-4">Assessment &amp; Idea Scope</h2>
+                <p className="text-lg neuro-text-secondary max-w-2xl mx-auto">
+                  Capture the essentials of your business idea so we can tailor resources, mentors, and funding pathways to your needs.
                 </p>
               </div>
 
-              <div className="space-y-6">
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <label className="block text-lg font-bold neuro-text-primary mb-3">
-                    Previous Business Experience 💼
-                  </label>
-                  <textarea
-                    rows={3}
-                    className="neuro-input resize-none text-lg"
-                    placeholder="Describe any previous business or entrepreneurial experience..."
-                  />
-                </div>
+              <form onSubmit={handleBusinessIntakeSubmit} className="space-y-8">
+                <section className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-semibold neuro-text-primary">1. Your Idea</h3>
+                    <p className="text-sm neuro-text-secondary mt-2">
+                      Summarize the opportunity and why it matters right now.
+                    </p>
+                  </div>
 
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <label className="block text-lg font-bold neuro-text-primary mb-3">
-                    Risk Tolerance 📊
-                  </label>
-                  <select className="neuro-select text-lg">
-                    <option value="">Select your risk tolerance level</option>
-                    <option value="low">Low - Prefer stable, predictable outcomes</option>
-                    <option value="moderate">Moderate - Comfortable with calculated risks</option>
-                    <option value="high">High - Thrive on uncertainty and challenges</option>
-                  </select>
-                </div>
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">Idea Name</label>
+                    <input
+                      className="neuro-input"
+                      placeholder="What do you call your idea?"
+                      value={businessIntakeForm.ideaName}
+                      onChange={event => handleBusinessIntakeChange('ideaName', event.target.value)}
+                      required
+                    />
+                  </div>
 
-                <div className="text-center neuro-inset p-6 rounded-neuro-lg">
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">One sentence summary</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="Describe your idea in a single, powerful sentence."
+                      value={businessIntakeForm.ideaSummary}
+                      onChange={event => handleBusinessIntakeChange('ideaSummary', event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">The problem</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="What pain or challenge are you solving?"
+                      value={businessIntakeForm.ideaProblem}
+                      onChange={event => handleBusinessIntakeChange('ideaProblem', event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">Why it matters</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="Why is solving this problem urgent or valuable now?"
+                      value={businessIntakeForm.ideaImportance}
+                      onChange={event => handleBusinessIntakeChange('ideaImportance', event.target.value)}
+                      required
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-semibold neuro-text-primary">2. Who It’s For</h3>
+                    <p className="text-sm neuro-text-secondary mt-2">
+                      Clarify the audience you’re serving and their biggest struggle.
+                    </p>
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">Main customer or user</label>
+                    <input
+                      className="neuro-input"
+                      placeholder="Who benefits the most from your idea?"
+                      value={businessIntakeForm.mainCustomer}
+                      onChange={event => handleBusinessIntakeChange('mainCustomer', event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">Their biggest pain point</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="What challenge do they face today?"
+                      value={businessIntakeForm.customerPainPoint}
+                      onChange={event => handleBusinessIntakeChange('customerPainPoint', event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">How your idea helps</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="Explain in simple terms how life gets better or easier."
+                      value={businessIntakeForm.ideaBenefit}
+                      onChange={event => handleBusinessIntakeChange('ideaBenefit', event.target.value)}
+                      required
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-semibold neuro-text-primary">3. What Makes It Different</h3>
+                    <p className="text-sm neuro-text-secondary mt-2">
+                      Show how you stand apart from what exists today.
+                    </p>
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">Existing options</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="How do people solve this problem right now?"
+                      value={businessIntakeForm.existingOptions}
+                      onChange={event => handleBusinessIntakeChange('existingOptions', event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">Your edge</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="What makes your approach better, faster, or more appealing?"
+                      value={businessIntakeForm.differentiator}
+                      onChange={event => handleBusinessIntakeChange('differentiator', event.target.value)}
+                      required
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-semibold neuro-text-primary">4. How It Works</h3>
+                    <p className="text-sm neuro-text-secondary mt-2">
+                      Outline your offer, revenue model, and collaborators.
+                    </p>
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">What you will offer</label>
+                    <input
+                      className="neuro-input"
+                      placeholder="Product, service, app, platform, or something else?"
+                      value={businessIntakeForm.offeringType}
+                      onChange={event => handleBusinessIntakeChange('offeringType', event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">How you'll earn money</label>
+                    <input
+                      className="neuro-input"
+                      placeholder="Sell, subscribe, partner, or another revenue path?"
+                      value={businessIntakeForm.revenueApproach}
+                      onChange={event => handleBusinessIntakeChange('revenueApproach', event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">Who you might work with</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="Key partners, suppliers, or helpers."
+                      value={businessIntakeForm.potentialPartners}
+                      onChange={event => handleBusinessIntakeChange('potentialPartners', event.target.value)}
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-semibold neuro-text-primary">5. Next Steps</h3>
+                    <p className="text-sm neuro-text-secondary mt-2">
+                      Clarify what support you need and what success means to you.
+                    </p>
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">What do you need right now?</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="Money, skills, team, feedback, or something else?"
+                      value={businessIntakeForm.immediateNeeds}
+                      onChange={event => handleBusinessIntakeChange('immediateNeeds', event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
+                    <label className="block text-sm font-semibold neuro-text-primary">What success looks like</label>
+                    <textarea
+                      className="neuro-input resize-none"
+                      rows={3}
+                      placeholder="How will you know the idea is working?"
+                      value={businessIntakeForm.successDefinition}
+                      onChange={event => handleBusinessIntakeChange('successDefinition', event.target.value)}
+                      required
+                    />
+                  </div>
+                </section>
+
+                <div className="neuro-inset p-6 rounded-neuro flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 neuro-icon flex items-center justify-center text-lg font-semibold text-neuro-primary">
+                      L
+                    </div>
+                    <p className="text-sm neuro-text-secondary text-left">
+                      <strong className="text-neuro-primary">Lumina’s tip:</strong> The more detail you provide, the easier it is to match you with accelerators, funding, and mentors who fit your vision.
+                    </p>
+                  </div>
                   <button
-                    onClick={() => completeStep('assessment-questionnaire', 'goal-setting')}
+                    type="submit"
                     className="neuro-button-primary inline-flex items-center px-8 py-4 text-lg rounded-neuro-lg hover:scale-105 transition-all duration-300"
                   >
                     <FileText className="w-6 h-6 mr-3" />
-                    <span>Submit Assessment</span>
+                    <span>Save &amp; Continue</span>
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </button>
                 </div>
-                
-                <div className="text-center mt-6">
-                  <div className="neuro-inset p-4 rounded-neuro">
-                    <p className="text-sm neuro-text-muted">
-                      💡 <strong>Pro Tip:</strong> Complete the SkillCraft assessment first to get personalized business recommendations and unlock advanced mentorship features.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              </form>
             </div>
           </div>
         );
-
-      case 'goal-setting':
-        return <GoalSetting onComplete={() => completeStep('goal-setting', 'business-plan-creation')} />;
 
       case 'business-plan-creation': {
         const hasWoopReport =
@@ -1155,7 +1433,7 @@ export const EntrepreneurDashboard: React.FC = () => {
                       <div>
                         <h3 className="text-2xl font-bold neuro-text-primary">WOOP Intake Summary</h3>
                         <p className="neuro-text-secondary">
-                          Structured profile synthesized from SkillCraft insights and goal-setting inputs.
+                          Structured profile synthesized from SkillCraft insights and your intake responses.
                         </p>
                       </div>
                     </div>
@@ -1163,7 +1441,7 @@ export const EntrepreneurDashboard: React.FC = () => {
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="neuro-inset p-5 rounded-neuro space-y-3">
-                        <h4 className="font-semibold neuro-text-primary">Scope the Idea</h4>
+                        <h4 className="font-semibold neuro-text-primary">Assessment &amp; Idea Scope</h4>
                         <div className="text-sm neuro-text-secondary space-y-2">
                           <div>
                             <span className="font-semibold text-neuro-primary">Primary goal:</span>{' '}
