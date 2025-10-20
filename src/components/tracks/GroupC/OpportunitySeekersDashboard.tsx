@@ -6,10 +6,10 @@ import { ProgressStep } from '../../../types';
 import { AssessmentResults } from '../../assessment/AssessmentResults';
 import { 
   Brain, 
-  Target, 
-  MessageCircle, 
-  ArrowRight, 
-  CheckCircle, 
+  Target,
+  MessageCircle,
+  ArrowRight,
+  CheckCircle,
   Star,
   Compass,
   FileText,
@@ -29,7 +29,8 @@ import {
   PenTool,
   Globe,
   Calendar,
-  ArrowLeft
+  ArrowLeft,
+  ChevronDown
 } from 'lucide-react';
 
 type GoalSettingForm = {
@@ -59,6 +60,15 @@ export const OpportunitySeekersDashboard: React.FC = () => {
     careerGoals: user?.profile?.goalSettingData?.careerGoals || user?.profile?.careerGoals || '',
     skillsToImprove: user?.profile?.goalSettingData?.skillsToImprove || user?.profile?.skillsToImprove || ''
   }));
+  const [expandedSections, setExpandedSections] = useState<Record<
+    'businessIdea' | 'timeCommitment' | 'careerGoals' | 'skillsToImprove',
+    boolean
+  >>({
+    businessIdea: true,
+    timeCommitment: false,
+    careerGoals: false,
+    skillsToImprove: false
+  });
 
   useEffect(() => {
     const stored: GoalSettingForm = {
@@ -106,6 +116,15 @@ export const OpportunitySeekersDashboard: React.FC = () => {
       persistGoalSettingData(updated);
       return updated;
     });
+  };
+
+  const toggleSection = (
+    section: 'businessIdea' | 'timeCommitment' | 'careerGoals' | 'skillsToImprove'
+  ) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   const handleStepClick = (stepId: string) => {
@@ -341,64 +360,118 @@ export const OpportunitySeekersDashboard: React.FC = () => {
               </div>
 
               <form onSubmit={handleGoalSettingSubmit} className="space-y-6">
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <label className="block text-lg font-bold neuro-text-primary mb-3">
-                    Business Idea or Career Vision 💡
-                  </label>
-                  <textarea
-                    value={goalSettingData.businessIdea}
-                    onChange={e => handleGoalSettingChange('businessIdea', e.target.value)}
-                    rows={3}
-                    className="neuro-input resize-none text-lg"
-                    placeholder="Describe your ideal career direction or business idea..."
-                    required
-                  />
-                </div>
-
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <label className="block text-lg font-bold neuro-text-primary mb-3">
-                    Time Commitment ⏰
-                  </label>
-                  <select
-                    value={goalSettingData.timeCommitment}
-                    onChange={e => handleGoalSettingChange('timeCommitment', e.target.value)}
-                    className="neuro-select text-lg"
-                    required
+                <div className="neuro-surface p-6 sm:p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('businessIdea')}
+                    className="w-full flex items-center justify-between text-left"
                   >
-                    <option value="">Select your available time commitment</option>
-                    <option value="5-10 hours/week">5-10 hours per week</option>
-                    <option value="10-20 hours/week">10-20 hours per week</option>
-                    <option value="20-30 hours/week">20-30 hours per week</option>
-                    <option value="30+ hours/week">30+ hours per week (intensive)</option>
-                  </select>
+                    <span className="text-lg font-bold neuro-text-primary">
+                      Business Idea or Career Vision 💡
+                    </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-neuro-text-light transition-transform ${
+                        expandedSections.businessIdea ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {expandedSections.businessIdea && (
+                    <div className="mt-4">
+                      <textarea
+                        value={goalSettingData.businessIdea}
+                        onChange={e => handleGoalSettingChange('businessIdea', e.target.value)}
+                        rows={3}
+                        className="neuro-input resize-none text-lg"
+                        placeholder="Describe your ideal career direction or business idea..."
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <label className="block text-lg font-bold neuro-text-primary mb-3">
-                    Career Goals 🚀
-                  </label>
-                  <textarea
-                    value={goalSettingData.careerGoals}
-                    onChange={e => handleGoalSettingChange('careerGoals', e.target.value)}
-                    rows={3}
-                    className="neuro-input resize-none text-lg"
-                    placeholder="What are your specific career transition goals?"
-                    required
-                  />
+                <div className="neuro-surface p-6 sm:p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('timeCommitment')}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <span className="text-lg font-bold neuro-text-primary">Time Commitment ⏰</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-neuro-text-light transition-transform ${
+                        expandedSections.timeCommitment ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {expandedSections.timeCommitment && (
+                    <div className="mt-4">
+                      <select
+                        value={goalSettingData.timeCommitment}
+                        onChange={e => handleGoalSettingChange('timeCommitment', e.target.value)}
+                        className="neuro-select text-lg"
+                        required
+                      >
+                        <option value="">Select your available time commitment</option>
+                        <option value="5-10 hours/week">5-10 hours per week</option>
+                        <option value="10-20 hours/week">10-20 hours per week</option>
+                        <option value="20-30 hours/week">20-30 hours per week</option>
+                        <option value="30+ hours/week">30+ hours per week (intensive)</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
-                <div className="neuro-surface p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
-                  <label className="block text-lg font-bold neuro-text-primary mb-3">
-                    Skills to Improve 📈
-                  </label>
-                  <textarea
-                    value={goalSettingData.skillsToImprove}
-                    onChange={e => handleGoalSettingChange('skillsToImprove', e.target.value)}
-                    rows={3}
-                    className="neuro-input resize-none text-lg"
-                    placeholder="What skills would you like to develop or improve?"
-                    required
-                  />
+                <div className="neuro-surface p-6 sm:p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('careerGoals')}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <span className="text-lg font-bold neuro-text-primary">Career Goals 🚀</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-neuro-text-light transition-transform ${
+                        expandedSections.careerGoals ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {expandedSections.careerGoals && (
+                    <div className="mt-4">
+                      <textarea
+                        value={goalSettingData.careerGoals}
+                        onChange={e => handleGoalSettingChange('careerGoals', e.target.value)}
+                        rows={3}
+                        className="neuro-input resize-none text-lg"
+                        placeholder="What are your specific career transition goals?"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="neuro-surface p-6 sm:p-8 rounded-neuro-lg hover:shadow-neuro-hover transition-all duration-300">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('skillsToImprove')}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <span className="text-lg font-bold neuro-text-primary">Skills to Improve 📈</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-neuro-text-light transition-transform ${
+                        expandedSections.skillsToImprove ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {expandedSections.skillsToImprove && (
+                    <div className="mt-4">
+                      <textarea
+                        value={goalSettingData.skillsToImprove}
+                        onChange={e => handleGoalSettingChange('skillsToImprove', e.target.value)}
+                        rows={3}
+                        className="neuro-input resize-none text-lg"
+                        placeholder="What skills would you like to develop or improve?"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-center neuro-inset p-6 rounded-neuro-lg">

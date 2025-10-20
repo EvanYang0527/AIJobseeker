@@ -16,6 +16,7 @@ import { WorkforceReadyDashboard } from './components/tracks/GroupC/WorkforceRea
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AssessmentQuestionnaire } from './components/assessment/AssessmentQuestionnaire';
 import { CareerExplorationLanding } from './components/assessment/CareerExplorationLanding';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -154,6 +155,7 @@ function App() {
       <ChatProvider>
         <Router>
           <div className="App">
+            <LanguageSwitcher />
             <AppRoutes />
           </div>
         </Router>
