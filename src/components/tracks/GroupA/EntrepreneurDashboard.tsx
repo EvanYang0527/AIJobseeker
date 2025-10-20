@@ -36,7 +36,8 @@ import {
   Clock,
   RefreshCw,
   Compass,
-  ChevronDown
+  ChevronDown,
+  Info
 } from 'lucide-react';
 import { entrepreneurSteps } from './entrepreneurSteps';
 
@@ -627,11 +628,11 @@ export const EntrepreneurDashboard: React.FC = () => {
     createInitialBusinessIntakeForm(user?.profile?.businessDevelopmentIntake ?? null)
   );
   const [expandedAssessmentSections, setExpandedAssessmentSections] = useState<Record<AssessmentSectionKey, boolean>>({
-    yourIdea: true,
-    targetAudience: true,
-    differentiation: true,
-    operations: true,
-    nextSteps: true
+    yourIdea: false,
+    targetAudience: false,
+    differentiation: false,
+    operations: false,
+    nextSteps: false
   });
 
   useEffect(() => {
@@ -1325,7 +1326,18 @@ export const EntrepreneurDashboard: React.FC = () => {
                     </div>
 
                     <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
-                      <label className="block text-sm font-semibold neuro-text-primary">Your edge</label>
+                      <div className="flex items-start justify-between gap-2">
+                        <label className="block text-sm font-semibold neuro-text-primary">Your edge</label>
+                        <button
+                          type="button"
+                          className="text-neuro-primary/60 hover:text-neuro-primary transition-colors"
+                          title="Explain what makes your solution hard to copy—think unique insights, IP, relationships, or execution advantages."
+                          aria-label="What does Your edge mean?"
+                        >
+                          <Info className="w-4 h-4" />
+                          <span className="sr-only">Show guidance for Your edge</span>
+                        </button>
+                      </div>
                       <textarea
                         className="neuro-input resize-none"
                         rows={3}
@@ -1379,7 +1391,18 @@ export const EntrepreneurDashboard: React.FC = () => {
                     </div>
 
                     <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
-                      <label className="block text-sm font-semibold neuro-text-primary">How you'll earn money</label>
+                      <div className="flex items-start justify-between gap-2">
+                        <label className="block text-sm font-semibold neuro-text-primary">How you'll earn money</label>
+                        <button
+                          type="button"
+                          className="text-neuro-primary/60 hover:text-neuro-primary transition-colors"
+                          title="Describe the primary revenue streams you expect—sales, subscriptions, licensing, marketplaces, or other models."
+                          aria-label="Help with revenue model question"
+                        >
+                          <Info className="w-4 h-4" />
+                          <span className="sr-only">Show guidance for revenue model</span>
+                        </button>
+                      </div>
                       <input
                         className="neuro-input"
                         placeholder="Sell, subscribe, partner, or another revenue path?"
@@ -1390,7 +1413,18 @@ export const EntrepreneurDashboard: React.FC = () => {
                     </div>
 
                     <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
-                      <label className="block text-sm font-semibold neuro-text-primary">Who you might work with</label>
+                      <div className="flex items-start justify-between gap-2">
+                        <label className="block text-sm font-semibold neuro-text-primary">Who you might work with</label>
+                        <button
+                          type="button"
+                          className="text-neuro-primary/60 hover:text-neuro-primary transition-colors"
+                          title="List strategic partners, suppliers, distributors, or experts you’ll need to deliver value or reach customers."
+                          aria-label="Help with partners question"
+                        >
+                          <Info className="w-4 h-4" />
+                          <span className="sr-only">Show guidance for partners question</span>
+                        </button>
+                      </div>
                       <textarea
                         className="neuro-input resize-none"
                         rows={3}
@@ -1444,7 +1478,18 @@ export const EntrepreneurDashboard: React.FC = () => {
                     </div>
 
                     <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
-                      <label className="block text-sm font-semibold neuro-text-primary">What success looks like</label>
+                      <div className="flex items-start justify-between gap-2">
+                        <label className="block text-sm font-semibold neuro-text-primary">What success looks like</label>
+                        <button
+                          type="button"
+                          className="text-neuro-primary/60 hover:text-neuro-primary transition-colors"
+                          title="Define tangible milestones—customers acquired, revenue targets, product launches, or impact metrics that signal traction."
+                          aria-label="Help defining success"
+                        >
+                          <Info className="w-4 h-4" />
+                          <span className="sr-only">Show guidance for success definition</span>
+                        </button>
+                      </div>
                       <textarea
                         className="neuro-input resize-none"
                         rows={3}
