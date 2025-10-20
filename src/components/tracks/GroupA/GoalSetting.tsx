@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Target, ArrowRight } from 'lucide-react';
+import { Target, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface GoalSettingProps {
   onComplete: () => void;
 }
+
+type SectionKey = 'businessIdea' | 'businessCategory' | 'experienceYears' | 'timeCommitment' | 'tip';
 
 export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
   const { user, updateUser } = useAuth();
@@ -14,6 +16,54 @@ export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
     experienceYears: user?.profile?.experienceYears || 0,
     timeCommitment: user?.profile?.timeCommitment || ''
   });
+  const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
+    businessIdea: true,
+    businessCategory: true,
+    experienceYears: true,
+    timeCommitment: true,
+    tip: true
+  });
+
+  const toggleSection = (section: SectionKey) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const CollapsibleSection: React.FC<{ section: SectionKey; title: string; children: React.ReactNode }> = ({
+    section,
+    title,
+    children
+  }) => {
+    const headingId = `${section}-heading`;
+    const contentId = `${section}-content`;
+
+    return (
+      <div className="neuro-inset rounded-neuro p-4">
+        <button
+          type="button"
+          onClick={() => toggleSection(section)}
+          className="w-full flex items-center justify-between text-left"
+          aria-expanded={openSections[section]}
+          aria-controls={contentId}
+          aria-labelledby={headingId}
+        >
+          <span id={headingId} className="text-sm font-semibold neuro-text-primary">{title}</span>
+          {openSections[section] ? (
+            <ChevronUp className="w-4 h-4 text-neuro-text-light" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-neuro-text-light" />
+          )}
+        </button>
+        {openSections[section] && (
+          <div id={contentId} className="mt-4 space-y-4">
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -53,34 +103,40 @@ export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <label className="block text-sm font-semibold neuro-text-primary mb-2">
-            Business Idea (1500 characters max)
-          </label>
-          <textarea
-            name="businessIdea"
-            value={formData.businessIdea}
-            onChange={handleChange}
-            rows={4}
-            maxLength={1500}
-            className="neuro-input resize-none"
-            placeholder="Describe your business idea, target market, and value proposition..."
-            required
-          />
-          <div className="text-right text-sm neuro-text-muted mt-1">
-            {formData.businessIdea.length}/1500 characters
+        <CollapsibleSection section="businessIdea" title="Business Idea (1500 characters max)">
+          <div>
+            <label htmlFor="businessIdea" className="sr-only">
+              Business Idea (1500 characters max)
+            </label>
+            <textarea
+              id="businessIdea"
+              name="businessIdea"
+              value={formData.businessIdea}
+              onChange={handleChange}
+              rows={4}
+              maxLength={1500}
+              className="neuro-input resize-none"
+              placeholder="Describe your business idea, target market, and value proposition..."
+              aria-labelledby="businessIdea-heading"
+              required
+            />
+            <div className="text-right text-sm neuro-text-muted">
+              {formData.businessIdea.length}/1500 characters
+            </div>
           </div>
-        </div>
+        </CollapsibleSection>
 
-        <div>
-          <label className="block text-sm font-semibold neuro-text-primary mb-2">
+        <CollapsibleSection section="businessCategory" title="Business Category">
+          <label htmlFor="businessCategory" className="sr-only">
             Business Category
           </label>
           <select
+            id="businessCategory"
             name="businessCategory"
             value={formData.businessCategory}
             onChange={handleChange}
             className="neuro-select"
+            aria-labelledby="businessCategory-heading"
             required
           >
             <option value="">Select a category</option>
@@ -89,13 +145,14 @@ export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
             <option value="Retail">Retail</option>
             <option value="Other">Other</option>
           </select>
-        </div>
+        </CollapsibleSection>
 
-        <div>
-          <label className="block text-sm font-semibold neuro-text-primary mb-2">
+        <CollapsibleSection section="experienceYears" title="Experience in Years">
+          <label htmlFor="experienceYears" className="sr-only">
             Experience in Years
           </label>
           <input
+            id="experienceYears"
             type="number"
             name="experienceYears"
             value={formData.experienceYears}
@@ -104,19 +161,22 @@ export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
             max="50"
             className="neuro-input"
             placeholder="Years of relevant experience"
+            aria-labelledby="experienceYears-heading"
             required
           />
-        </div>
+        </CollapsibleSection>
 
-        <div>
-          <label className="block text-sm font-semibold neuro-text-primary mb-2">
+        <CollapsibleSection section="timeCommitment" title="Time Commitment">
+          <label htmlFor="timeCommitment" className="sr-only">
             Time Commitment
           </label>
           <select
+            id="timeCommitment"
             name="timeCommitment"
             value={formData.timeCommitment}
             onChange={handleChange}
             className="neuro-select"
+            aria-labelledby="timeCommitment-heading"
             required
           >
             <option value="">Select time commitment</option>
@@ -126,22 +186,21 @@ export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
             <option value="4-6 months">4-6 months (Comprehensive)</option>
             <option value="6+ months">6+ months (Extensive)</option>
           </select>
-        </div>
+        </CollapsibleSection>
 
-        <div className="neuro-inset p-6 rounded-neuro">
+        <CollapsibleSection section="tip" title="Lumina's Tip">
           <div className="flex items-start">
             <div className="w-12 h-12 neuro-icon mr-4">
               <span className="neuro-text-primary font-semibold">L</span>
             </div>
             <div>
-              <h4 className="font-semibold neuro-text-primary mb-2">Lumina's Tip</h4>
               <p className="neuro-text-secondary">
-                Be specific about your business idea! The more details you provide, the better I can 
+                Be specific about your business idea! The more details you provide, the better I can
                 tailor your training plan and connect you with relevant resources and mentors. Make sure to complete your SkillsCraft assessment first for personalized recommendations.
               </p>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
 
         <div className="flex justify-end">
           <button
