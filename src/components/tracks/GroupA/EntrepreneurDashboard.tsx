@@ -41,6 +41,22 @@ import {
 } from 'lucide-react';
 import { entrepreneurSteps } from './entrepreneurSteps';
 
+const InfoTooltip: React.FC<{ message: string; ariaLabel: string }> = ({ message, ariaLabel }) => (
+  <div className="relative inline-flex group">
+    <button
+      type="button"
+      className="rounded-full p-1 text-neuro-primary/60 transition-colors hover:text-neuro-primary focus:outline-none focus:ring-2 focus:ring-neuro-primary/40"
+      aria-label={ariaLabel}
+    >
+      <Info className="w-4 h-4" />
+      <span className="sr-only">{ariaLabel}</span>
+    </button>
+    <div className="pointer-events-none absolute left-1/2 top-full z-30 hidden w-64 -translate-x-1/2 translate-y-2 rounded-neuro-lg bg-white/95 p-3 text-xs font-medium text-neuro-primary shadow-xl ring-1 ring-neuro-primary/10 backdrop-blur group-hover:block group-focus-within:block dark:bg-slate-900/95">
+      {message}
+    </div>
+  </div>
+);
+
 const formatPromptValue = (value: unknown): string => {
   if (value === undefined || value === null) {
     return 'Not provided by the user.';
@@ -1326,17 +1342,12 @@ export const EntrepreneurDashboard: React.FC = () => {
                     </div>
 
                     <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
                         <label className="block text-sm font-semibold neuro-text-primary">Your edge</label>
-                        <button
-                          type="button"
-                          className="text-neuro-primary/60 hover:text-neuro-primary transition-colors"
-                          title="Explain what makes your solution hard to copy—think unique insights, IP, relationships, or execution advantages."
-                          aria-label="What does Your edge mean?"
-                        >
-                          <Info className="w-4 h-4" />
-                          <span className="sr-only">Show guidance for Your edge</span>
-                        </button>
+                        <InfoTooltip
+                          ariaLabel="Guidance for highlighting your edge"
+                          message="Explain what makes your solution hard to copy—highlight unique insights, defensible IP, key relationships, or execution strengths."
+                        />
                       </div>
                       <textarea
                         className="neuro-input resize-none"
@@ -1391,17 +1402,12 @@ export const EntrepreneurDashboard: React.FC = () => {
                     </div>
 
                     <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
                         <label className="block text-sm font-semibold neuro-text-primary">How you'll earn money</label>
-                        <button
-                          type="button"
-                          className="text-neuro-primary/60 hover:text-neuro-primary transition-colors"
-                          title="Describe the primary revenue streams you expect—sales, subscriptions, licensing, marketplaces, or other models."
-                          aria-label="Help with revenue model question"
-                        >
-                          <Info className="w-4 h-4" />
-                          <span className="sr-only">Show guidance for revenue model</span>
-                        </button>
+                        <InfoTooltip
+                          ariaLabel="Guidance for describing revenue strategy"
+                          message="Describe the main revenue streams you expect—consider sales, subscriptions, licensing, marketplace fees, or other monetization paths."
+                        />
                       </div>
                       <input
                         className="neuro-input"
@@ -1413,17 +1419,12 @@ export const EntrepreneurDashboard: React.FC = () => {
                     </div>
 
                     <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
                         <label className="block text-sm font-semibold neuro-text-primary">Who you might work with</label>
-                        <button
-                          type="button"
-                          className="text-neuro-primary/60 hover:text-neuro-primary transition-colors"
-                          title="List strategic partners, suppliers, distributors, or experts you’ll need to deliver value or reach customers."
-                          aria-label="Help with partners question"
-                        >
-                          <Info className="w-4 h-4" />
-                          <span className="sr-only">Show guidance for partners question</span>
-                        </button>
+                        <InfoTooltip
+                          ariaLabel="Guidance for partnership planning"
+                          message="List the strategic partners, suppliers, distributors, or experts you'll collaborate with to deliver value or reach your customers."
+                        />
                       </div>
                       <textarea
                         className="neuro-input resize-none"
@@ -1478,17 +1479,12 @@ export const EntrepreneurDashboard: React.FC = () => {
                     </div>
 
                     <div className="neuro-surface p-6 rounded-neuro-lg space-y-3">
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
                         <label className="block text-sm font-semibold neuro-text-primary">What success looks like</label>
-                        <button
-                          type="button"
-                          className="text-neuro-primary/60 hover:text-neuro-primary transition-colors"
-                          title="Define tangible milestones—customers acquired, revenue targets, product launches, or impact metrics that signal traction."
-                          aria-label="Help defining success"
-                        >
-                          <Info className="w-4 h-4" />
-                          <span className="sr-only">Show guidance for success definition</span>
-                        </button>
+                        <InfoTooltip
+                          ariaLabel="Guidance for defining success criteria"
+                          message="Define tangible milestones that show traction—customer wins, revenue targets, launch timelines, or impact metrics you plan to reach."
+                        />
                       </div>
                       <textarea
                         className="neuro-input resize-none"
