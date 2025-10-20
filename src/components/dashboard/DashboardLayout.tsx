@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProgressBar } from './ProgressBar';
 import { Chatbot } from '../chatbot/Chatbot';
 import { ProgressStep } from '../../types';
 import { 
-  LogOut, 
-  Building2, 
+  LogOut,
+  Building2,
   Bell,
   Star,
-  Target
+  Target,
+  Globe
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -29,6 +30,27 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onPathwaysClick
 }) => {
   const { user, logout } = useAuth();
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const languageMenuRef = useRef<HTMLDivElement | null>(null);
+  const languageOptions = ['English', 'Spanish', 'French', 'German', 'Portuguese'];
+
+  useEffect(() => {
+    if (!isLanguageMenuOpen) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+        setIsLanguageMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLanguageMenuOpen]);
 
   const getTrackLabel = () => {
     switch (user?.selectedTrack) {
@@ -69,6 +91,46 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
             {/* Right Section */}
             <div className="flex items-center space-x-4">
+              {/* Language Switcher */}
+              <div className="relative" ref={languageMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsLanguageMenuOpen(prev => !prev)}
+                  className="neuro-button flex items-center"
+                  aria-haspopup="listbox"
+                  aria-expanded={isLanguageMenuOpen}
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">{selectedLanguage}</span>
+                  <span className="sm:hidden">Lang</span>
+                </button>
+                {isLanguageMenuOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-44 neuro-surface rounded-neuro shadow-lg border border-white/10 z-50"
+                    role="listbox"
+                    aria-label="Select language"
+                  >
+                    {languageOptions.map(language => (
+                      <button
+                        key={language}
+                        type="button"
+                        onClick={() => {
+                          setSelectedLanguage(language);
+                          setIsLanguageMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-white/5 focus:outline-none focus-visible:bg-white/10 ${
+                          language === selectedLanguage ? 'text-neuro-primary font-semibold' : 'neuro-text-secondary'
+                        }`}
+                        role="option"
+                        aria-selected={language === selectedLanguage}
+                      >
+                        {language}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Notifications */}
               <button className="relative neuro-icon hidden sm:flex">
                 <Bell className="w-5 h-5 text-neuro-text-light" />
