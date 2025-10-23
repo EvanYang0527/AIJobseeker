@@ -11,10 +11,12 @@ type SectionKey = 'businessIdea' | 'businessCategory' | 'experienceYears' | 'tim
 export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
   const { user, updateUser } = useAuth();
   const [formData, setFormData] = useState({
-    businessIdea: user?.profile?.businessIdea || '',
+    businessIdea:
+      user?.profile?.goalSettingData?.businessIdea || user?.profile?.businessIdea || '',
     businessCategory: user?.profile?.businessCategory || '',
     experienceYears: user?.profile?.experienceYears || 0,
-    timeCommitment: user?.profile?.timeCommitment || ''
+    timeCommitment:
+      user?.profile?.goalSettingData?.timeCommitment || user?.profile?.timeCommitment || ''
   });
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     businessIdea: true,
@@ -76,14 +78,24 @@ export const GoalSetting: React.FC<GoalSettingProps> = ({ onComplete }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const updatedGoalSettingData = {
+      ...user?.profile?.goalSettingData,
+      businessIdea: formData.businessIdea,
+      timeCommitment: formData.timeCommitment
+    };
+
+    const existingCompletedSteps = new Set(user?.progress?.completedSteps || []);
+    existingCompletedSteps.add('goal-setting');
+
     updateUser({
       profile: {
         ...user?.profile,
-        ...formData
+        ...formData,
+        goalSettingData: updatedGoalSettingData
       },
       progress: {
         ...user?.progress!,
-        completedSteps: [...(user?.progress?.completedSteps || []), 'goal-setting']
+        completedSteps: Array.from(existingCompletedSteps)
       }
     });
     
