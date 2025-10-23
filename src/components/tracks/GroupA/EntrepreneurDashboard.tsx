@@ -183,6 +183,53 @@ const parseNumericTimeCommitment = (value?: string | null): number | null => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const normalizeLearningPlanContent = (content: unknown): LearningPlanRecommendation => {
+  let textContent: string | null = null;
+
+  if (typeof content === 'string') {
+    textContent = content;
+  } else if (Array.isArray(content)) {
+    textContent = content
+      .map(part => {
+        if (typeof part === 'string') {
+          return part;
+        }
+
+        if (part && typeof part === 'object') {
+          const record = part as { text?: unknown; content?: unknown };
+          if (typeof record.text === 'string') {
+            return record.text;
+          }
+          if (typeof record.content === 'string') {
+            return record.content;
+          }
+        }
+
+        return '';
+      })
+      .join('');
+  }
+
+  if (!textContent) {
+    throw new Error('Learning plan response did not include valid content.');
+  }
+
+  const cleanedContent = textContent
+    .replace(/```json/gi, '```')
+    .replace(/```/g, '')
+    .trim();
+
+  const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+  const jsonPayload = jsonMatch ? jsonMatch[0] : cleanedContent;
+
+  try {
+    return JSON.parse(jsonPayload) as LearningPlanRecommendation;
+  } catch (error) {
+    console.error('Failed to parse learning plan response', error, cleanedContent);
+    throw new Error('Learning plan response could not be parsed as JSON.');
+  }
+};
+
 const formatDifficultyLabel = (difficulty: string | null | undefined) => {
   if (!difficulty) {
     return 'All levels';
@@ -802,13 +849,7 @@ export const EntrepreneurDashboard: React.FC = () => {
         }
 
         const data = await response.json();
-        const content = data?.choices?.[0]?.message?.content;
-
-        if (!content || typeof content !== 'string') {
-          throw new Error('Learning plan response did not include valid content.');
-        }
-
-        const parsed = JSON.parse(content) as LearningPlanRecommendation;
+        const parsed = normalizeLearningPlanContent(data?.choices?.[0]?.message?.content);
         setLearningPlan(parsed);
       } catch (error) {
         if (error instanceof Error) {
