@@ -27,22 +27,6 @@ This directory contains comprehensive documentation for Lumina - your personal c
 - [Code Standards](./TECHNICAL_DOCUMENTATION.md#development-guidelines)
 - [Testing Guide](./TESTING_GUIDE.md)
 
-### For System Administrators
-- [Installation](./TECHNICAL_DOCUMENTATION.md#installation--setup)
-- [Configuration](./TECHNICAL_DOCUMENTATION.md#configuration)
-- [Monitoring](./ADMIN_GUIDE.md#monitoring)
-
-### For End Users
-- [Platform Overview](./USER_MANUAL.md#platform-overview)
-- [Track Selection Guide](./USER_MANUAL.md#track-selection)
-- [Assessment Instructions](./USER_MANUAL.md#assessments)
-
-## Support
-
-For technical support or questions about this documentation:
-- **Email**: support@lumina.com
-- **Internal Wiki**: https://wiki.yourcompany.com/lumina
-- **Support Portal**: https://support.yourcompany.com
 
 ## Documentation Updates
 
