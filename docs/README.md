@@ -6,7 +6,7 @@ This directory contains comprehensive documentation for Lumina - your personal c
 
 ### Core Documentation
 - **[Technical Documentation](./TECHNICAL_DOCUMENTATION.md)** - Complete technical reference
-- **[API Reference](./API_REFERENCE.md)** - REST API documentation
+
 
 
 Last Updated: 2024-01-15
