@@ -922,23 +922,4 @@ const EntrepreneurDashboard = React.lazy(() =>
 
 ---
 
-## Support & Contact
-
-### Technical Support
-- **Email**: tech-support@yourcompany.com
-- **Documentation**: https://docs.yourcompany.com/ai-jobseeker-tool
-- **Status Page**: https://status.yourcompany.com
-
-### Development Team
-- **Lead Developer**: development-team@yourcompany.com
-- **DevOps Team**: devops@yourcompany.com
-- **Security Team**: security@yourcompany.com
-
-### Enterprise Sales
-- **Sales Team**: enterprise-sales@yourcompany.com
-- **Implementation Services**: implementation@yourcompany.com
-- **Training Services**: training@yourcompany.com
-
----
-
 *This documentation is version-controlled and updated regularly. For the latest version, please refer to the online documentation portal.*
